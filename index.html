@@ -484,25 +484,20 @@
                     console.log('Inicializando con configuración para app web...');
                     
                     gapi.client.init(initConfig).then(() => {
-                                console.log('Auth2 inicializado correctamente');
-                                // Escuchar cambios en el estado de autenticación
-                                gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
-                                
-                                // Manejar el estado inicial de autenticación
-                                updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
-                            }).catch(error => {
-                                console.error('Error inicializando auth2:', error);
-                                setSyncStatus('error');
-                                
-                                if (error.error === 'idpiframe_initialization_failed') {
-                                    console.error('Detalles del error:', error.details);
-                                    alert('Error de configuración OAuth. Verifica:\n1. Client ID correcto\n2. Orígenes autorizados\n3. APIs habilitadas');
-                                }
-                            });
-                        });
+                        console.log('Auth2 inicializado correctamente');
+                        // Escuchar cambios en el estado de autenticación
+                        gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
+                        
+                        // Manejar el estado inicial de autenticación
+                        updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
                     }).catch(error => {
-                        console.error('Error inicializando cliente:', error);
+                        console.error('Error inicializando auth2:', error);
                         setSyncStatus('error');
+                        
+                        if (error.error === 'idpiframe_initialization_failed') {
+                            console.error('Detalles del error:', error.details);
+                            alert('Error de configuración OAuth. Verifica:\n1. Client ID correcto\n2. Orígenes autorizados\n3. APIs habilitadas');
+                        }
                     });
                 });
             };

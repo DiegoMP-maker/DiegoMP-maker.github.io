@@ -63,4 +63,42 @@ python3 -m http.server 8000
 
 # Abrir en navegador
 # http://localhost:8000
-```1
+```
+
+## 🗺️ Roadmap de Mejoras
+
+### ✅ Implementadas
+- [x] Sistema de configuración seguro para API keys
+- [x] Integración con Google Drive
+- [x] Generación de ejercicios con OpenAI
+- [x] Sistema de vocabulario personal
+- [x] Sistema de reservas con Google Calendar
+
+### 🚧 En Desarrollo
+- [ ] Sistema de progreso y gamificación (badges/insignias)
+- [ ] Biblioteca de ejercicios pre-generados
+- [ ] Sistema de evaluación automática
+- [ ] Pronunciación con Web Speech API
+
+### 📋 Próximas Mejoras
+- [ ] Modo presentación para clases
+- [ ] Grabación y reporte de sesiones
+- [ ] Ejercicios interactivos sin IA (sopa de letras, memoria, etc.)
+- [ ] Temas visuales y modo oscuro
+- [ ] Exportación mejorada (PDF real, certificados)
+- [ ] Integración con WhatsApp/Telegram
+- [ ] Acentuación inteligente
+- [ ] Detector de falsos amigos
+- [ ] Conjugador visual con animaciones
+
+### 💡 Ideas Adicionales
+- Sistema de notificaciones para tareas
+- Calendario integrado con recordatorios
+- Foro de discusión para estudiantes
+- Biblioteca de recursos (PDFs, videos)
+- Estadísticas detalladas por estudiante
+- Modo offline con sincronización
+- Aplicación móvil (React Native)
+- Integración con Zoom/Google Meet
+- Dictados con reconocimiento de voz
+- Generador de exámenes1

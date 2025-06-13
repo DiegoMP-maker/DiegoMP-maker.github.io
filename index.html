@@ -50,6 +50,34 @@
             width: 16px;
             height: 16px;
         }
+        
+        /* Estilos para ejercicios con evaluación */
+        .exercise-input { 
+            border: 1px solid #d1d5db; 
+            padding: 4px 8px; 
+            border-radius: 4px; 
+            width: 100px;
+        }
+        .exercise-input.correct { 
+            background-color: #dcfce7; 
+            border-color: #16a34a; 
+        }
+        .exercise-input.incorrect { 
+            background-color: #fee2e2; 
+            border-color: #dc2626; 
+        }
+        .exercise-check-btn {
+            background-color: #3b82f6;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        .exercise-check-btn:hover {
+            background-color: #2563eb;
+        }
     </style>
 </head>
 <body>
@@ -208,7 +236,7 @@
             
             // Si no existen, pedirlas al usuario
             if (!keys.googleClientId || !keys.googleApiKey || !keys.openaiApiKey) {
-                alert('Para usar todas las funcionalidades, necesitas configurar las API keys.\nVe a Configuración en el panel lateral.');
+                console.warn('API keys no configuradas. Algunas funciones estarán deshabilitadas.');
             }
             
             return keys;
@@ -221,6 +249,75 @@
         const OPENAI_API_KEY = apiKeys.openaiApiKey;
         const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'];
         const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata';
+
+        // Biblioteca de ejercicios pre-generados
+        const exerciseLibrary = {
+            A1: {
+                vocabulary: [
+                    {
+                        id: 'vocab-a1-1',
+                        title: 'La Familia',
+                        content: `<h3>Une cada definición con la palabra correcta</h3>
+                        <p><strong>Definiciones:</strong></p>
+                        <p>1. El hijo de mi hermano/a: _______</p>
+                        <p>2. La madre de mi madre: _______</p>
+                        <p>3. El esposo de mi hija: _______</p>
+                        <p>4. La hermana de mi padre: _______</p>
+                        <p>5. Los padres de mi esposo/a: _______</p>
+                        <p><strong>Banco de palabras:</strong> sobrino, abuela, yerno, tía, suegros, primo, abuelo</p>`,
+                        answers: { 1: 'sobrino', 2: 'abuela', 3: 'yerno', 4: 'tía', 5: 'suegros' }
+                    }
+                ],
+                conjugation: [
+                    {
+                        id: 'conj-a1-1',
+                        title: 'Verbo SER - Presente',
+                        content: `<h3>Completa la conjugación del verbo SER en presente</h3>
+                        <table border="1" style="width: 100%; border-collapse: collapse;">
+                        <tr><th>Pronombre</th><th>Conjugación</th></tr>
+                        <tr><td>Yo</td><td><input type="text" data-answer="soy" class="exercise-input" /></td></tr>
+                        <tr><td>Tú</td><td><input type="text" data-answer="eres" class="exercise-input" /></td></tr>
+                        <tr><td>Él/Ella</td><td><input type="text" data-answer="es" class="exercise-input" /></td></tr>
+                        <tr><td>Nosotros</td><td><input type="text" data-answer="somos" class="exercise-input" /></td></tr>
+                        <tr><td>Vosotros</td><td><input type="text" data-answer="sois" class="exercise-input" /></td></tr>
+                        <tr><td>Ellos/Ellas</td><td><input type="text" data-answer="son" class="exercise-input" /></td></tr>
+                        </table>`,
+                        type: 'fill-in'
+                    }
+                ],
+                completion: [
+                    {
+                        id: 'comp-a1-1',
+                        title: 'Saludos y Presentaciones',
+                        content: `<h3>Completa las frases con las palabras del banco</h3>
+                        <p>1. ¡Hola! ¿Cómo _______ llamas?</p>
+                        <p>2. _______ llamo María.</p>
+                        <p>3. ¿De _______ eres?</p>
+                        <p>4. Soy _______ España.</p>
+                        <p>5. Mucho _______ en conocerte.</p>
+                        <p><strong>Banco de palabras:</strong> te, me, dónde, de, gusto, está, soy</p>`,
+                        answers: { 1: 'te', 2: 'Me', 3: 'dónde', 4: 'de', 5: 'gusto' }
+                    }
+                ]
+            },
+            B1: {
+                vocabulary: [
+                    {
+                        id: 'vocab-b1-1',
+                        title: 'El Trabajo',
+                        content: `<h3>Une cada definición con la profesión correcta</h3>
+                        <p><strong>Definiciones:</strong></p>
+                        <p>1. Persona que diseña edificios y estructuras: _______</p>
+                        <p>2. Profesional que defiende a personas en juicios: _______</p>
+                        <p>3. Especialista en preparar comidas en restaurantes: _______</p>
+                        <p>4. Persona que escribe artículos para periódicos: _______</p>
+                        <p>5. Profesional que atiende a pacientes enfermos: _______</p>
+                        <p><strong>Banco de palabras:</strong> arquitecto, abogado, chef, periodista, enfermero, ingeniero, contador</p>`,
+                        answers: { 1: 'arquitecto', 2: 'abogado', 3: 'chef', 4: 'periodista', 5: 'enfermero' }
+                    }
+                ]
+            }
+        };
 
         const EspanolProfApp = () => {
             // Estados principales
@@ -279,6 +376,10 @@
             // Estados para vocabulario
             const [showAddVocab, setShowAddVocab] = useState(false);
             const [newWord, setNewWord] = useState({ word: '', definition: '', example: '' });
+            
+            // Estados para sistema de progreso
+            const [studentProgress, setStudentProgress] = useState({});
+            const [badges, setBadges] = useState({});
             
             // Estados de conectividad
             const [gdriveConnected, setGdriveConnected] = useState(false);
@@ -367,27 +468,41 @@
                     return;
                 }
                 
+                // Cargar gapi correctamente según la documentación
                 gapi.load('client:auth2', () => {
-                    gapi.client.init({
+                    console.log('GAPI cargado correctamente');
+                    
+                    // Configuración específica para aplicaciones web JavaScript
+                    const initConfig = {
                         apiKey: GOOGLE_API_KEY,
                         clientId: GOOGLE_CLIENT_ID,
                         discoveryDocs: DISCOVERY_DOCS,
                         scope: SCOPES
-                    }).then(() => {
-                        console.log('Google API inicializada correctamente');
-                        // Escuchar cambios en el estado de autenticación
-                        gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
-                        
-                        // Manejar el estado inicial de autenticación
-                        updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+                        // NO incluir plugin_name para aplicaciones web
+                    };
+                    
+                    console.log('Inicializando con configuración para app web...');
+                    
+                    gapi.client.init(initConfig).then(() => {
+                                console.log('Auth2 inicializado correctamente');
+                                // Escuchar cambios en el estado de autenticación
+                                gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
+                                
+                                // Manejar el estado inicial de autenticación
+                                updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+                            }).catch(error => {
+                                console.error('Error inicializando auth2:', error);
+                                setSyncStatus('error');
+                                
+                                if (error.error === 'idpiframe_initialization_failed') {
+                                    console.error('Detalles del error:', error.details);
+                                    alert('Error de configuración OAuth. Verifica:\n1. Client ID correcto\n2. Orígenes autorizados\n3. APIs habilitadas');
+                                }
+                            });
+                        });
                     }).catch(error => {
-                        console.error('Error initializing Google API:', error);
+                        console.error('Error inicializando cliente:', error);
                         setSyncStatus('error');
-                        
-                        // Mostrar mensaje más útil al usuario
-                        if (error.details && error.details.includes('Not a valid origin')) {
-                            alert(`Para usar Google Drive, agrega este origen a tu proyecto de Google Cloud Console:\n\n${currentOrigin}\n\nVe a: https://console.developers.google.com/`);
-                        }
                     });
                 });
             };
@@ -403,11 +518,32 @@
                 }
             };
             
-            const handleAuthClick = () => {
-                if (isSignedIn) {
-                    gapi.auth2.getAuthInstance().signOut();
-                } else {
-                    gapi.auth2.getAuthInstance().signIn();
+            const handleAuthClick = async () => {
+                try {
+                    if (isSignedIn) {
+                        await gapi.auth2.getAuthInstance().signOut();
+                        console.log('Usuario desconectado');
+                    } else {
+                        // Configurar parámetros específicos para el signIn
+                        const googleAuth = gapi.auth2.getAuthInstance();
+                        const options = {
+                            scope: SCOPES,
+                            prompt: 'consent' // Forzar pantalla de consentimiento
+                        };
+                        
+                        console.log('Iniciando proceso de autenticación...');
+                        const googleUser = await googleAuth.signIn(options);
+                        console.log('Usuario autenticado:', googleUser.getBasicProfile().getEmail());
+                    }
+                } catch (error) {
+                    console.error('Error en autenticación:', error);
+                    if (error.error === 'popup_closed_by_user') {
+                        console.log('El usuario cerró la ventana de autenticación');
+                    } else if (error.error === 'access_denied') {
+                        alert('Acceso denegado. Verifica los permisos de la aplicación.');
+                    } else {
+                        alert(`Error de autenticación: ${error.error || error.message || 'Error desconocido'}`);
+                    }
                 }
             };
             
@@ -750,6 +886,264 @@
                 }));
             };
             
+            // Insertar ejercicio de la biblioteca
+            const insertLibraryExercise = (exercise) => {
+                if (editorRef.current) {
+                    const editor = editorRef.current;
+                    editor.focus();
+                    
+                    const exerciseDiv = document.createElement('div');
+                    exerciseDiv.innerHTML = `<div style="border: 2px solid #059669; padding: 16px; margin: 16px 0; border-radius: 8px; background-color: #f0fdfa;">
+                        <h3 style="color: #047857; margin-bottom: 12px;">📚 ${exercise.title}</h3>
+                        ${exercise.content}
+                    </div>`;
+                    
+                    editor.appendChild(exerciseDiv);
+                    handleEditorChange();
+                    
+                    // Registrar actividad para el progreso
+                    recordActivity('exercise_completed', exercise.id);
+                    
+                    // Agregar botón de evaluación si el ejercicio tiene respuestas
+                    if (exercise.answers || exercise.type === 'fill-in') {
+                        setTimeout(() => {
+                            addEvaluationButton(exerciseDiv, exercise);
+                        }, 100);
+                    }
+                    
+                    editor.scrollTop = editor.scrollHeight;
+                }
+            };
+            
+            // Agregar botón de evaluación a un ejercicio
+            const addEvaluationButton = (container, exercise) => {
+                const buttonContainer = document.createElement('div');
+                buttonContainer.innerHTML = `
+                    <button class="exercise-check-btn" onclick="checkExercise('${exercise.id}')">
+                        ✅ Verificar Respuestas
+                    </button>
+                    <button class="exercise-check-btn" onclick="showAnswers('${exercise.id}')" style="background-color: #059669;">
+                        👁️ Mostrar Respuestas
+                    </button>
+                `;
+                container.appendChild(buttonContainer);
+                
+                // Guardar las respuestas en el DOM para acceso posterior
+                container.dataset.exerciseAnswers = JSON.stringify(exercise.answers || {});
+                container.dataset.exerciseType = exercise.type || 'standard';
+            };
+            
+            // Función global para verificar ejercicios (accesible desde onclick)
+            window.checkExercise = (exerciseId) => {
+                const exerciseContainer = document.querySelector(`[data-exercise-id="${exerciseId}"]`) || 
+                                         Array.from(document.querySelectorAll('[data-exercise-answers]')).find(el => 
+                                             el.querySelector('.exercise-check-btn')
+                                         );
+                
+                if (!exerciseContainer) return;
+                
+                const answers = JSON.parse(exerciseContainer.dataset.exerciseAnswers || '{}');
+                const type = exerciseContainer.dataset.exerciseType;
+                
+                let correctCount = 0;
+                let totalCount = 0;
+                
+                if (type === 'fill-in') {
+                    // Verificar inputs con data-answer
+                    const inputs = exerciseContainer.querySelectorAll('.exercise-input[data-answer]');
+                    inputs.forEach(input => {
+                        const userAnswer = input.value.trim().toLowerCase();
+                        const correctAnswer = input.dataset.answer.toLowerCase();
+                        totalCount++;
+                        
+                        if (userAnswer === correctAnswer) {
+                            input.classList.remove('incorrect');
+                            input.classList.add('correct');
+                            correctCount++;
+                        } else {
+                            input.classList.remove('correct');
+                            input.classList.add('incorrect');
+                        }
+                    });
+                } else {
+                    // Verificar respuestas estándar basadas en números
+                    Object.keys(answers).forEach(questionNum => {
+                        const input = exerciseContainer.querySelector(`input[data-question="${questionNum}"]`) ||
+                                     exerciseContainer.querySelector(`span[data-question="${questionNum}"] input`);
+                        
+                        if (input) {
+                            const userAnswer = input.value.trim().toLowerCase();
+                            const correctAnswer = answers[questionNum].toLowerCase();
+                            totalCount++;
+                            
+                            if (userAnswer === correctAnswer) {
+                                input.classList.remove('incorrect');
+                                input.classList.add('correct');
+                                correctCount++;
+                            } else {
+                                input.classList.remove('correct');
+                                input.classList.add('incorrect');
+                            }
+                        }
+                    });
+                }
+                
+                // Mostrar resultado
+                const percentage = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
+                const resultDiv = exerciseContainer.querySelector('.exercise-result') || document.createElement('div');
+                resultDiv.className = 'exercise-result';
+                resultDiv.innerHTML = `
+                    <div style="margin: 10px 0; padding: 10px; border-radius: 6px; ${percentage >= 70 ? 'background-color: #dcfce7; color: #16a34a;' : 'background-color: #fee2e2; color: #dc2626;'}">
+                        <strong>Resultado: ${correctCount}/${totalCount} (${percentage}%)</strong>
+                        ${percentage >= 70 ? ' ¡Excelente trabajo! 🎉' : ' Sigue practicando 💪'}
+                    </div>
+                `;
+                
+                if (!exerciseContainer.querySelector('.exercise-result')) {
+                    exerciseContainer.appendChild(resultDiv);
+                }
+                
+                // Registrar evaluación completada
+                if (currentStudent) {
+                    recordActivity('exercise_evaluated', {
+                        exerciseId,
+                        score: percentage,
+                        correct: correctCount,
+                        total: totalCount
+                    });
+                }
+            };
+            
+            // Función global para mostrar respuestas
+            window.showAnswers = (exerciseId) => {
+                const exerciseContainer = Array.from(document.querySelectorAll('[data-exercise-answers]')).find(el => 
+                    el.querySelector('.exercise-check-btn')
+                );
+                
+                if (!exerciseContainer) return;
+                
+                const answers = JSON.parse(exerciseContainer.dataset.exerciseAnswers || '{}');
+                const type = exerciseContainer.dataset.exerciseType;
+                
+                if (type === 'fill-in') {
+                    const inputs = exerciseContainer.querySelectorAll('.exercise-input[data-answer]');
+                    inputs.forEach(input => {
+                        input.value = input.dataset.answer;
+                        input.classList.remove('incorrect');
+                        input.classList.add('correct');
+                    });
+                } else {
+                    Object.keys(answers).forEach(questionNum => {
+                        const input = exerciseContainer.querySelector(`input[data-question="${questionNum}"]`);
+                        if (input) {
+                            input.value = answers[questionNum];
+                            input.classList.remove('incorrect');
+                            input.classList.add('correct');
+                        }
+                    });
+                }
+            };
+            
+            // Registrar actividad del estudiante
+            const recordActivity = (type, data) => {
+                if (!currentStudent) return;
+                
+                const studentId = currentStudent.id;
+                const today = new Date().toISOString().split('T')[0];
+                
+                setStudentProgress(prev => {
+                    const current = prev[studentId] || { 
+                        totalExercises: 0, 
+                        vocabularyWords: 0, 
+                        streak: 0, 
+                        lastActivity: null,
+                        activities: [] 
+                    };
+                    
+                    const updated = { ...current };
+                    
+                    switch(type) {
+                        case 'exercise_completed':
+                            updated.totalExercises++;
+                            updated.activities.push({ type, data, date: today });
+                            break;
+                        case 'word_added':
+                            updated.vocabularyWords++;
+                            updated.activities.push({ type, data, date: today });
+                            break;
+                    }
+                    
+                    // Calcular racha
+                    if (updated.lastActivity !== today) {
+                        const yesterday = new Date();
+                        yesterday.setDate(yesterday.getDate() - 1);
+                        const yesterdayStr = yesterday.toISOString().split('T')[0];
+                        
+                        if (updated.lastActivity === yesterdayStr) {
+                            updated.streak++;
+                        } else if (updated.lastActivity && updated.lastActivity !== today) {
+                            updated.streak = 1;
+                        } else {
+                            updated.streak = 1;
+                        }
+                    }
+                    
+                    updated.lastActivity = today;
+                    
+                    // Verificar badges
+                    checkBadges(studentId, updated);
+                    
+                    return { ...prev, [studentId]: updated };
+                });
+            };
+            
+            // Sistema de badges/insignias
+            const checkBadges = (studentId, progress) => {
+                const newBadges = [];
+                const studentBadges = badges[studentId] || [];
+                
+                // Badge: Primera palabra
+                if (progress.vocabularyWords >= 1 && !studentBadges.includes('first_word')) {
+                    newBadges.push('first_word');
+                }
+                
+                // Badge: 10 palabras
+                if (progress.vocabularyWords >= 10 && !studentBadges.includes('vocab_master')) {
+                    newBadges.push('vocab_master');
+                }
+                
+                // Badge: Racha de 5 días
+                if (progress.streak >= 5 && !studentBadges.includes('streak_5')) {
+                    newBadges.push('streak_5');
+                }
+                
+                // Badge: 20 ejercicios
+                if (progress.totalExercises >= 20 && !studentBadges.includes('exercise_master')) {
+                    newBadges.push('exercise_master');
+                }
+                
+                if (newBadges.length > 0) {
+                    setBadges(prev => ({
+                        ...prev,
+                        [studentId]: [...(prev[studentId] || []), ...newBadges]
+                    }));
+                    
+                    // Mostrar notificación de nuevo badge
+                    newBadges.forEach(badge => {
+                        const badgeNames = {
+                            'first_word': '🌟 Primera Palabra',
+                            'vocab_master': '📚 Maestro del Vocabulario',
+                            'streak_5': '🔥 Racha de 5 Días',
+                            'exercise_master': '🏆 Maestro de Ejercicios'
+                        };
+                        
+                        setTimeout(() => {
+                            alert(`¡Felicidades! Has ganado la insignia: ${badgeNames[badge]}`);
+                        }, 500);
+                    });
+                }
+            };
+            
             // Insertar template
             const insertTemplate = (template) => {
                 if (editorRef.current) {
@@ -914,6 +1308,31 @@
                 setNewMessage('');
             };
             
+            // Función de pronunciación
+            const speakText = (text, lang = 'es-ES') => {
+                if ('speechSynthesis' in window) {
+                    // Cancelar cualquier pronunciación en curso
+                    window.speechSynthesis.cancel();
+                    
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    utterance.lang = lang;
+                    utterance.rate = 0.9; // Velocidad un poco más lenta para estudiantes
+                    utterance.pitch = 1;
+                    utterance.volume = 1;
+                    
+                    // Opcional: diferentes voces para España/México
+                    const voices = window.speechSynthesis.getVoices();
+                    const spanishVoice = voices.find(voice => voice.lang === lang);
+                    if (spanishVoice) {
+                        utterance.voice = spanishVoice;
+                    }
+                    
+                    window.speechSynthesis.speak(utterance);
+                } else {
+                    alert('Tu navegador no soporta síntesis de voz');
+                }
+            };
+            
             // Funciones de vocabulario
             const addVocabularyWord = () => {
                 if (!currentStudent || !newWord.word.trim()) return;
@@ -928,6 +1347,9 @@
                 
                 setNewWord({ word: '', definition: '', example: '' });
                 setShowAddVocab(false);
+                
+                // Registrar actividad
+                recordActivity('word_added', newWord.word);
                 
                 // Guardar en localStorage
                 const data = {
@@ -1275,24 +1697,36 @@
                         <div className="w-96 p-4">
                             <div className="bg-white rounded-xl shadow-lg h-full flex flex-col">
                                 <div className="p-4 border-b border-gray-200">
-                                    <div className="flex gap-2">
+                                    <div className="flex gap-1 flex-wrap">
                                         <button 
                                             onClick={() => setActivePanel('session')}
-                                            className={`px-3 py-2 rounded-lg text-sm ${activePanel === 'session' ? 'bg-indigo-500 text-white' : 'bg-gray-100'}`}
+                                            className={`px-2 py-1 rounded-lg text-xs ${activePanel === 'session' ? 'bg-indigo-500 text-white' : 'bg-gray-100'}`}
                                         >
                                             Sesión
                                         </button>
                                         <button 
                                             onClick={() => setActivePanel('tools')}
-                                            className={`px-3 py-2 rounded-lg text-sm ${activePanel === 'tools' ? 'bg-indigo-500 text-white' : 'bg-gray-100'}`}
+                                            className={`px-2 py-1 rounded-lg text-xs ${activePanel === 'tools' ? 'bg-indigo-500 text-white' : 'bg-gray-100'}`}
                                         >
-                                            Herramientas
+                                            IA
+                                        </button>
+                                        <button 
+                                            onClick={() => setActivePanel('library')}
+                                            className={`px-2 py-1 rounded-lg text-xs ${activePanel === 'library' ? 'bg-green-500 text-white' : 'bg-gray-100'}`}
+                                        >
+                                            Biblioteca
                                         </button>
                                         <button 
                                             onClick={() => setActivePanel('vocab')}
-                                            className={`px-3 py-2 rounded-lg text-sm ${activePanel === 'vocab' ? 'bg-indigo-500 text-white' : 'bg-gray-100'}`}
+                                            className={`px-2 py-1 rounded-lg text-xs ${activePanel === 'vocab' ? 'bg-indigo-500 text-white' : 'bg-gray-100'}`}
                                         >
                                             Vocabulario
+                                        </button>
+                                        <button 
+                                            onClick={() => setActivePanel('progress')}
+                                            className={`px-2 py-1 rounded-lg text-xs ${activePanel === 'progress' ? 'bg-purple-500 text-white' : 'bg-gray-100'}`}
+                                        >
+                                            Progreso
                                         </button>
                                     </div>
                                 </div>
@@ -1527,6 +1961,131 @@
                                         </div>
                                     )}
                                     
+                                    {activePanel === 'library' && (
+                                        <div className="space-y-4">
+                                            <h3 className="font-semibold text-gray-800 mb-3">📚 Biblioteca de Ejercicios</h3>
+                                            
+                                            {currentStudent && exerciseLibrary[currentStudent.level] ? (
+                                                <div className="space-y-3">
+                                                    <p className="text-sm text-green-600">
+                                                        Ejercicios disponibles para nivel {currentStudent.level}:
+                                                    </p>
+                                                    
+                                                    {/* Ejercicios de vocabulario */}
+                                                    {exerciseLibrary[currentStudent.level].vocabulary && (
+                                                        <div>
+                                                            <h4 className="font-medium text-gray-700 mb-2">Vocabulario</h4>
+                                                            {exerciseLibrary[currentStudent.level].vocabulary.map(exercise => (
+                                                                <button
+                                                                    key={exercise.id}
+                                                                    onClick={() => insertLibraryExercise(exercise)}
+                                                                    className="w-full text-left p-2 bg-green-50 hover:bg-green-100 rounded border border-green-200 mb-1"
+                                                                >
+                                                                    <div className="font-medium text-green-800">{exercise.title}</div>
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {/* Ejercicios de conjugación */}
+                                                    {exerciseLibrary[currentStudent.level].conjugation && (
+                                                        <div>
+                                                            <h4 className="font-medium text-gray-700 mb-2">Conjugación</h4>
+                                                            {exerciseLibrary[currentStudent.level].conjugation.map(exercise => (
+                                                                <button
+                                                                    key={exercise.id}
+                                                                    onClick={() => insertLibraryExercise(exercise)}
+                                                                    className="w-full text-left p-2 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 mb-1"
+                                                                >
+                                                                    <div className="font-medium text-blue-800">{exercise.title}</div>
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                    
+                                                    {/* Ejercicios de completar */}
+                                                    {exerciseLibrary[currentStudent.level].completion && (
+                                                        <div>
+                                                            <h4 className="font-medium text-gray-700 mb-2">Completar</h4>
+                                                            {exerciseLibrary[currentStudent.level].completion.map(exercise => (
+                                                                <button
+                                                                    key={exercise.id}
+                                                                    onClick={() => insertLibraryExercise(exercise)}
+                                                                    className="w-full text-left p-2 bg-purple-50 hover:bg-purple-100 rounded border border-purple-200 mb-1"
+                                                                >
+                                                                    <div className="font-medium text-purple-800">{exercise.title}</div>
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <p className="text-gray-500 text-center py-4">
+                                                    {!currentStudent ? 'Selecciona un estudiante' : `No hay ejercicios disponibles para nivel ${currentStudent.level}`}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+                                    
+                                    {activePanel === 'progress' && (
+                                        <div className="space-y-4">
+                                            <h3 className="font-semibold text-gray-800 mb-3">📊 Progreso del Estudiante</h3>
+                                            
+                                            {currentStudent && studentProgress[currentStudent.id] ? (
+                                                <div className="space-y-4">
+                                                    <div className="bg-purple-50 p-3 rounded-lg">
+                                                        <h4 className="font-medium text-purple-800 mb-2">Estadísticas</h4>
+                                                        <div className="grid grid-cols-2 gap-2 text-sm">
+                                                            <div>
+                                                                <span className="text-gray-600">Ejercicios:</span>
+                                                                <span className="ml-2 font-bold">{studentProgress[currentStudent.id].totalExercises}</span>
+                                                            </div>
+                                                            <div>
+                                                                <span className="text-gray-600">Vocabulario:</span>
+                                                                <span className="ml-2 font-bold">{studentProgress[currentStudent.id].vocabularyWords}</span>
+                                                            </div>
+                                                            <div>
+                                                                <span className="text-gray-600">Racha:</span>
+                                                                <span className="ml-2 font-bold">{studentProgress[currentStudent.id].streak} días</span>
+                                                            </div>
+                                                            <div>
+                                                                <span className="text-gray-600">Última vez:</span>
+                                                                <span className="ml-2 font-bold text-xs">{studentProgress[currentStudent.id].lastActivity}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div className="bg-yellow-50 p-3 rounded-lg">
+                                                        <h4 className="font-medium text-yellow-800 mb-2">🏆 Insignias</h4>
+                                                        <div className="flex flex-wrap gap-1">
+                                                            {badges[currentStudent.id] && badges[currentStudent.id].length > 0 ? (
+                                                                badges[currentStudent.id].map(badge => {
+                                                                    const badgeInfo = {
+                                                                        'first_word': '🌟',
+                                                                        'vocab_master': '📚',
+                                                                        'streak_5': '🔥',
+                                                                        'exercise_master': '🏆'
+                                                                    };
+                                                                    return (
+                                                                        <span key={badge} className="text-2xl" title={badge}>
+                                                                            {badgeInfo[badge]}
+                                                                        </span>
+                                                                    );
+                                                                })
+                                                            ) : (
+                                                                <span className="text-gray-500 text-sm">Aún no hay insignias</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <p className="text-gray-500 text-center py-4">
+                                                    {!currentStudent ? 'Selecciona un estudiante para ver su progreso' : 'No hay datos de progreso aún'}
+                                                </p>
+                                            )}
+                                        </div>
+                                    )}
+                                    
                                     {activePanel === 'vocab' && (
                                         <div className="space-y-4">
                                             <div className="flex justify-between items-center">
@@ -1549,10 +2108,28 @@
                                                         >
                                                             ✕
                                                         </button>
-                                                        <div className="font-medium text-gray-800 pr-6">{word.word}</div>
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="font-medium text-gray-800">{word.word}</div>
+                                                            <button 
+                                                                onClick={() => speakText(word.word)}
+                                                                className="p-1 bg-blue-100 hover:bg-blue-200 rounded text-blue-600 transition-colors"
+                                                                title="Escuchar pronunciación"
+                                                            >
+                                                                🔊
+                                                            </button>
+                                                        </div>
                                                         <div className="text-sm text-gray-600">{word.definition}</div>
                                                         {word.example && (
-                                                            <div className="text-sm text-indigo-600 italic">"{word.example}"</div>
+                                                            <div className="text-sm text-indigo-600 italic">
+                                                                "{word.example}"
+                                                                <button 
+                                                                    onClick={() => speakText(word.example)}
+                                                                    className="ml-2 p-1 text-xs bg-indigo-100 hover:bg-indigo-200 rounded text-indigo-600"
+                                                                    title="Escuchar ejemplo"
+                                                                >
+                                                                    🔊
+                                                                </button>
+                                                            </div>
                                                         )}
                                                     </div>
                                                 ))}

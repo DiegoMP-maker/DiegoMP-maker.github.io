@@ -25,10 +25,44 @@ Una aplicación web completa para profesores de español que permite gestionar e
 
 ### Configurar Google Cloud:
 
-1. Crea un proyecto en Google Cloud Console
-2. Habilita las APIs: Google Drive API y Google Picker API
-3. Crea credenciales OAuth 2.0
-4. Agrega los orígenes autorizados (ej: http://localhost:8000, tu dominio)
+1. **Crear proyecto en [Google Cloud Console](https://console.cloud.google.com)**
+2. **Habilitar APIs necesarias:**
+   - Google Drive API
+   - Google Picker API
+   
+3. **Crear credenciales OAuth 2.0:**
+   - Ir a "Credenciales" > "Crear credenciales" > "ID de cliente OAuth 2.0"
+   - Tipo de aplicación: "Aplicación web"
+   
+4. **Configurar orígenes autorizados JavaScript:**
+   ```
+   https://diegomp-maker.github.io
+   http://localhost:8000
+   https://localhost:8000
+   ```
+   
+5. **Configurar URIs de redirección autorizados:**
+   ```
+   https://diegomp-maker.github.io
+   http://localhost:8000
+   https://localhost:8000
+   ```
+
+### ⚠️ Solución de problemas OAuth:
+
+**Error: "Error retrieving a token"**
+1. Verifica que el Client ID sea correcto
+2. Asegúrate que `https://diegomp-maker.github.io` esté en orígenes autorizados
+3. Confirma que las APIs estén habilitadas
+4. Verifica que el tipo de aplicación sea "Aplicación web" (no "Aplicación de escritorio")
+
+**Error: "invalid_client"**
+- El Client ID no coincide o está mal configurado
+- Revisa que copies el Client ID completo sin espacios
+
+**Error: "unauthorized_client"**
+- Los orígenes no están autorizados correctamente
+- Agrega exactamente: `https://diegomp-maker.github.io`
 
 ## 🛡️ Seguridad
 
@@ -79,7 +113,7 @@ python3 -m http.server 8000
 - [x] Pronunciación con Web Speech API
 
 ### 🚧 En Desarrollo
-- [ ] Troubleshooting Google OAuth authentication
+- [ ] Solución completa de autenticación Google OAuth ("Error retrieving a token")
 
 ### 📋 Próximas Mejoras
 - [ ] Modo presentación para clases

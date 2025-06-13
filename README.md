@@ -73,12 +73,13 @@ python3 -m http.server 8000
 - [x] Generación de ejercicios con OpenAI
 - [x] Sistema de vocabulario personal
 - [x] Sistema de reservas con Google Calendar
+- [x] Sistema de progreso y gamificación (badges/insignias)
+- [x] Biblioteca de ejercicios pre-generados
+- [x] Sistema de evaluación automática
+- [x] Pronunciación con Web Speech API
 
 ### 🚧 En Desarrollo
-- [ ] Sistema de progreso y gamificación (badges/insignias)
-- [ ] Biblioteca de ejercicios pre-generados
-- [ ] Sistema de evaluación automática
-- [ ] Pronunciación con Web Speech API
+- [ ] Troubleshooting Google OAuth authentication
 
 ### 📋 Próximas Mejoras
 - [ ] Modo presentación para clases

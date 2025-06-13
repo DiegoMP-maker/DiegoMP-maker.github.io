@@ -4,1196 +4,1133 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EspañolProf - Plataforma Educativa</title>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/core@7.12.3/lib/index.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/lucide-react@latest/dist/umd/lucide-react.js"></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>">
+    
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React 18 -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel Standalone -->
+    <script src="https://unpkg.com/@babel/standalone@7.23.4/babel.min.js"></script>
+    
+    <style>
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        }
+        
+        .editor-content {
+            outline: none;
+            min-height: 400px;
+        }
+        
+        .editor-content:focus {
+            outline: 2px solid #6366f1;
+            outline-offset: -2px;
+        }
+        
+        /* Iconos SVG personalizados */
+        .icon {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+        
+        .icon-sm {
+            width: 16px;
+            height: 16px;
+        }
+    </style>
 </head>
 <body>
     <div id="root"></div>
     
     <script type="text/babel">
-        import React, { useState, useRef, useEffect } from 'react';
-import { Save, Download, Upload, Users, User, Calendar, BookOpen, PenTool, Eraser, Type, Circle, ArrowRight, Palette, RotateCcw, Trash2, Image, Plus, Lightbulb, FileText, Volume2, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, List, ListOrdered, Link, Copy, MessageCircle } from 'lucide-react';
+        const { useState, useRef, useEffect } = React;
+        
+        // Iconos SVG personalizados (reemplazo de Lucide)
+        const Icons = {
+            User: () => (
+                <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                    <circle cx="12" cy="7" r="4"/>
+                </svg>
+            ),
+            Users: () => (
+                <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                    <circle cx="9" cy="7" r="4"/>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+            ),
+            Download: () => (
+                <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7,10 12,15 17,10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+            ),
+            MessageCircle: () => (
+                <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+                </svg>
+            ),
+            Bold: () => (
+                <svg className="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/>
+                    <path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/>
+                </svg>
+            ),
+            Italic: () => (
+                <svg className="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="19" y1="4" x2="10" y2="4"/>
+                    <line x1="14" y1="20" x2="5" y2="20"/>
+                    <line x1="15" y1="4" x2="9" y2="20"/>
+                </svg>
+            ),
+            Underline: () => (
+                <svg className="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M6 3v7a6 6 0 0 0 6 6 6 6 0 0 0 6-6V3"/>
+                    <line x1="4" y1="21" x2="20" y2="21"/>
+                </svg>
+            ),
+            AlignLeft: () => (
+                <svg className="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="21" y1="10" x2="3" y2="10"/>
+                    <line x1="21" y1="6" x2="3" y2="6"/>
+                    <line x1="21" y1="14" x2="3" y2="14"/>
+                    <line x1="21" y1="18" x2="3" y2="18"/>
+                </svg>
+            ),
+            AlignCenter: () => (
+                <svg className="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="10" x2="6" y2="10"/>
+                    <line x1="21" y1="6" x2="3" y2="6"/>
+                    <line x1="21" y1="14" x2="3" y2="14"/>
+                    <line x1="18" y1="18" x2="6" y2="18"/>
+                </svg>
+            ),
+            AlignRight: () => (
+                <svg className="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="21" y1="10" x2="9" y2="10"/>
+                    <line x1="21" y1="6" x2="3" y2="6"/>
+                    <line x1="21" y1="14" x2="3" y2="14"/>
+                    <line x1="21" y1="18" x2="9" y2="18"/>
+                </svg>
+            ),
+            List: () => (
+                <svg className="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="8" y1="6" x2="21" y2="6"/>
+                    <line x1="8" y1="12" x2="21" y2="12"/>
+                    <line x1="8" y1="18" x2="21" y2="18"/>
+                    <line x1="3" y1="6" x2="3.01" y2="6"/>
+                    <line x1="3" y1="12" x2="3.01" y2="12"/>
+                    <line x1="3" y1="18" x2="3.01" y2="18"/>
+                </svg>
+            ),
+            ListOrdered: () => (
+                <svg className="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="10" y1="6" x2="21" y2="6"/>
+                    <line x1="10" y1="12" x2="21" y2="12"/>
+                    <line x1="10" y1="18" x2="21" y2="18"/>
+                    <path d="M4 6h1v4"/>
+                    <path d="M4 10h2"/>
+                    <path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/>
+                </svg>
+            ),
+            FileText: () => (
+                <svg className="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14,2 14,8 20,8"/>
+                    <line x1="16" y1="13" x2="8" y2="13"/>
+                    <line x1="16" y1="17" x2="8" y2="17"/>
+                    <polyline points="10,9 9,9 8,9"/>
+                </svg>
+            ),
+            Eraser: () => (
+                <svg className="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M7 21h10"/>
+                    <path d="M5 21h4"/>
+                    <path d="M19 21h-4"/>
+                    <path d="M9 3L3 9l6 6 6-6-6-6z"/>
+                    <path d="M12.5 5.5L16 9"/>
+                </svg>
+            ),
+            Plus: () => (
+                <svg className="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="12" y1="5" x2="12" y2="19"/>
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+            ),
+            ArrowRight: () => (
+                <svg className="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="5" y1="12" x2="19" y2="12"/>
+                    <polyline points="12,5 19,12 12,19"/>
+                </svg>
+            ),
+            Calendar: () => (
+                <svg className="icon icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                    <line x1="16" y1="2" x2="16" y2="6"/>
+                    <line x1="8" y1="2" x2="8" y2="6"/>
+                    <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+            ),
+            Lightbulb: () => (
+                <svg className="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M9 21h6"/>
+                    <path d="M12 17v4"/>
+                    <path d="M12 3a9 9 0 0 1 9 9 9 9 0 0 1-9 9 9 9 0 0 1-9-9 9 9 0 0 1 9-9z"/>
+                </svg>
+            )
+        };
 
-const EspanolProfApp = () => {
-  // Estados principales
-  const [currentStudent, setCurrentStudent] = useState(null);
-  const [students, setStudents] = useState([]);
-  const [sessions, setSessions] = useState({});
-  const [currentSession, setCurrentSession] = useState(1);
-  const [sessionDate, setSessionDate] = useState(new Date().toISOString().split('T')[0]);
-  const [vocabulary, setVocabulary] = useState({});
-  const [exercises, setExercises] = useState([]);
-  const [images, setImages] = useState([]);
-  
-  // Estados de Google Drive y WebRTC
-  const [gdriveConnected, setGdriveConnected] = useState(false);
-  const [webrtcConnected, setWebrtcConnected] = useState(false);
-  const [peerConnection, setPeerConnection] = useState(null);
-  const [dataChannel, setDataChannel] = useState(null);
-  const [roomId, setRoomId] = useState('');
-  
-  // Estados del editor colaborativo
-  const editorRef = useRef(null);
-  const [editorContent, setEditorContent] = useState('');
-  const [collaborators, setCollaborators] = useState([]);
-  const [isConnected, setIsConnected] = useState(false);
-  const [userName, setUserName] = useState('');
-  const [userColor, setUserColor] = useState('#3B82F6');
-  
-  // Estados de herramientas del editor
-  const [selectedTool, setSelectedTool] = useState('text');
-  const [textFormat, setTextFormat] = useState({
-    bold: false,
-    italic: false,
-    underline: false,
-    fontSize: 16,
-    color: '#000000',
-    align: 'left'
-  });
-  
-  // Estados de imágenes
-  const [uploadedImages, setUploadedImages] = useState([]);
-  const [draggedImage, setDraggedImage] = useState(null);
-  
-  // Estados de sesión
-  const [sessionData, setSessionData] = useState({
-    objectives: '',
-    achievements: '',
-    progress: '',
-    notes: ''
-  });
-  
-  // Estados de herramientas
-  const [showVocabModal, setShowVocabModal] = useState(false);
-  const [showExerciseModal, setShowExerciseModal] = useState(false);
-  const [showImageModal, setShowImageModal] = useState(false);
-  const [showTemplateModal, setShowTemplateModal] = useState(false);
-  const [activePanel, setActivePanel] = useState('session');
-  const [showChat, setShowChat] = useState(false);
-  const [chatMessages, setChatMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState('');
-  
-  // API Key OpenAI
-  const [apiKey, setApiKey] = useState('');
-  
-  // Templates predefinidos
-  const templates = [
-    {
-      id: 'conjugation',
-      name: 'Tabla de Conjugación',
-      content: `
-        <h2>Conjugación del Verbo: _______</h2>
-        <table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
-          <tr style="background-color: #f3f4f6;">
-            <th style="border: 1px solid #d1d5db; padding: 8px;">Pronombre</th>
-            <th style="border: 1px solid #d1d5db; padding: 8px;">Presente</th>
-            <th style="border: 1px solid #d1d5db; padding: 8px;">Pretérito</th>
-          </tr>
-          <tr><td style="border: 1px solid #d1d5db; padding: 8px;">Yo</td><td style="border: 1px solid #d1d5db; padding: 8px;">_______</td><td style="border: 1px solid #d1d5db; padding: 8px;">_______</td></tr>
-          <tr><td style="border: 1px solid #d1d5db; padding: 8px;">Tú</td><td style="border: 1px solid #d1d5db; padding: 8px;">_______</td><td style="border: 1px solid #d1d5db; padding: 8px;">_______</td></tr>
-          <tr><td style="border: 1px solid #d1d5db; padding: 8px;">Él/Ella</td><td style="border: 1px solid #d1d5db; padding: 8px;">_______</td><td style="border: 1px solid #d1d5db; padding: 8px;">_______</td></tr>
-        </table>
-      `
-    },
-    {
-      id: 'vocabulary',
-      name: 'Lista de Vocabulario',
-      content: `
-        <h2>Vocabulario - Lección ___</h2>
-        <div style="margin: 20px 0;">
-          <h3>Nuevas Palabras:</h3>
-          <ul style="list-style-type: disc; margin-left: 20px;">
-            <li><strong>Palabra:</strong> _______ - <em>Definición</em></li>
-            <li><strong>Palabra:</strong> _______ - <em>Definición</em></li>
-            <li><strong>Palabra:</strong> _______ - <em>Definición</em></li>
-          </ul>
-          <h3>Frases de Ejemplo:</h3>
-          <ol style="margin-left: 20px;">
-            <li>_______________________________</li>
-            <li>_______________________________</li>
-            <li>_______________________________</li>
-          </ol>
-        </div>
-      `
-    },
-    {
-      id: 'exercise',
-      name: 'Ejercicio de Completar',
-      content: `
-        <h2>Ejercicio: Completa las Frases</h2>
-        <div style="margin: 20px 0;">
-          <p><strong>Instrucciones:</strong> Completa las siguientes frases con la palabra correcta.</p>
-          <div style="margin: 15px 0; padding: 15px; background-color: #f9fafb; border-left: 4px solid #3b82f6;">
-            <p>1. Me gusta _______ música en mi tiempo libre.</p>
-            <p>2. ¿_______ hora es?</p>
-            <p>3. Mi hermana _______ estudiando medicina.</p>
-            <p>4. _______ mañana vamos al parque.</p>
-          </div>
-          <p><strong>Palabras disponibles:</strong> escuchar, qué, está, mañana</p>
-        </div>
-      `
-    }
-  ];
-  
-  useEffect(() => {
-    // Cargar datos guardados
-    const savedData = localStorage.getItem('espanol-prof-data');
-    if (savedData) {
-      try {
-        const data = JSON.parse(savedData);
-        setSessions(data.sessions || {});
-        setVocabulary(data.vocabulary || {});
-        setImages(data.images || []);
-        setEditorContent(data.editorContent || '');
-      } catch (e) {
-        console.log('Error loading data:', e);
-      }
-    }
-    
-    // Cargar estudiantes por separado
-    const savedStudents = localStorage.getItem('espanol-prof-students');
-    if (savedStudents) {
-      try {
-        const parsedStudents = JSON.parse(savedStudents);
-        setStudents(Array.isArray(parsedStudents) ? parsedStudents : []);
-      } catch (e) {
-        setStudents([]);
-      }
-    }
-    
-    // Inicializar usuario
-    const savedUser = localStorage.getItem('espanol-prof-user');
-    if (savedUser) {
-      try {
-        const user = JSON.parse(savedUser);
-        setUserName(user.name);
-        setUserColor(user.color);
-      } catch (e) {
-        const defaultUser = {
-          name: 'Profesor',
-          color: '#3B82F6'
-        };
-        setUserName(defaultUser.name);
-        setUserColor(defaultUser.color);
-        localStorage.setItem('espanol-prof-user', JSON.stringify(defaultUser));
-      }
-    } else {
-      const defaultUser = {
-        name: 'Profesor',
-        color: '#3B82F6'
-      };
-      setUserName(defaultUser.name);
-      setUserColor(defaultUser.color);
-      localStorage.setItem('espanol-prof-user', JSON.stringify(defaultUser));
-    }
-    
-    // Configurar editor
-    if (editorRef.current) {
-      editorRef.current.innerHTML = editorContent;
-    }
-    
-    // Inicializar WebRTC
-    initWebRTC();
-    
-    // Inicializar Google Drive
-    initGoogleDrive();
-  }, []);
-  
-  // Guardar datos automáticamente
-  useEffect(() => {
-    const saveData = () => {
-      const data = {
-        sessions,
-        vocabulary,
-        images,
-        editorContent
-      };
-      localStorage.setItem('espanol-prof-data', JSON.stringify(data));
-    };
-    
-    const interval = setInterval(saveData, 10000);
-    return () => clearInterval(interval);
-  }, [sessions, vocabulary, images, editorContent]);
-  
-  // Inicializar Google Drive API
-  const initGoogleDrive = () => {
-    const script = document.createElement('script');
-    script.src = 'https://apis.google.com/js/api.js';
-    script.onload = () => {
-      if (window.gapi) {
-        window.gapi.load('auth2:client', initGoogleAuth);
-      }
-    };
-    document.head.appendChild(script);
-  };
-  
-  const initGoogleAuth = () => {
-    if (!window.gapi) return;
-    window.gapi.client.init({
-      apiKey: 'YOUR_API_KEY',
-      clientId: 'YOUR_CLIENT_ID',
-      discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
-      scope: 'https://www.googleapis.com/auth/drive.file'
-    }).then(() => {
-      const authInstance = window.gapi.auth2.getAuthInstance();
-      setGdriveConnected(authInstance.isSignedIn.get());
-    }).catch(error => {
-      console.log('Error initializing Google Drive:', error);
-    });
-  };
-  
-  const connectGoogleDrive = () => {
-    if (window.gapi && window.gapi.auth2) {
-      const authInstance = window.gapi.auth2.getAuthInstance();
-      authInstance.signIn().then(() => {
-        setGdriveConnected(true);
-        syncToGoogleDrive();
-      }).catch(error => {
-        console.log('Error connecting to Google Drive:', error);
-      });
-    } else {
-      alert('Google Drive API no está disponible');
-    }
-  };
-  
-  const syncToGoogleDrive = () => {
-    if (!gdriveConnected || !window.gapi) return;
-    
-    const data = {
-      students,
-      sessions,
-      vocabulary,
-      images,
-      editorContent,
-      sessionData,
-      lastSync: new Date().toISOString()
-    };
-    
-    const fileMetadata = {
-      name: 'espanol-prof-backup.json'
-    };
-    
-    const form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify(fileMetadata)], {type: 'application/json'}));
-    form.append('file', new Blob([JSON.stringify(data)], {type: 'application/json'}));
-    
-    const authInstance = window.gapi.auth2.getAuthInstance();
-    const accessToken = authInstance.currentUser.get().getAuthResponse().access_token;
-    
-    fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
-      method: 'POST',
-      headers: new Headers({
-        'Authorization': `Bearer ${accessToken}`
-      }),
-      body: form
-    }).then(response => {
-      if (response.ok) {
-        console.log('Datos sincronizados con Google Drive');
-      }
-    }).catch(error => {
-      console.log('Error syncing to Google Drive:', error);
-    });
-  };
-  
-  // Inicializar WebRTC para colaboración en tiempo real
-  const initWebRTC = () => {
-    try {
-      const configuration = {
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' }
-        ]
-      };
-      
-      const pc = new RTCPeerConnection(configuration);
-      setPeerConnection(pc);
-      
-      const channel = pc.createDataChannel('collaboration', {
-        ordered: true
-      });
-      
-      channel.onopen = () => {
-        setWebrtcConnected(true);
-        setDataChannel(channel);
-      };
-      
-      channel.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        handleRemoteChange(data);
-      };
-      
-      pc.ondatachannel = (event) => {
-        const channel = event.channel;
-        channel.onmessage = (event) => {
-          const data = JSON.parse(event.data);
-          handleRemoteChange(data);
-        };
-      };
-    } catch (error) {
-      console.log('WebRTC no está disponible:', error);
-    }
-  };
-  
-  const handleRemoteChange = (data) => {
-    if (data.type === 'editor') {
-      setEditorContent(data.content);
-      if (editorRef.current) {
-        editorRef.current.innerHTML = data.content;
-      }
-    } else if (data.type === 'chat') {
-      setChatMessages(prev => [...prev, data.message]);
-    }
-  };
-  
-  const broadcastChange = (type, content) => {
-    if (dataChannel && dataChannel.readyState === 'open') {
-      try {
-        dataChannel.send(JSON.stringify({
-          type,
-          content,
-          user: userName,
-          timestamp: Date.now()
-        }));
-      } catch (error) {
-        console.log('Error broadcasting change:', error);
-      }
-    }
-  };
-  
-  const joinRoom = (roomId) => {
-    setRoomId(roomId);
-    setWebrtcConnected(true);
-    
-    setTimeout(() => {
-      setCollaborators([
-        { id: 'user1', name: 'Estudiante 1', color: '#EF4444', lastUpdate: Date.now() },
-        { id: 'user2', name: 'Estudiante 2', color: '#10B981', lastUpdate: Date.now() }
-      ]);
-    }, 2000);
-  };
-  
-  // Manejar cambios en el editor
-  const handleEditorChange = () => {
-    if (editorRef.current) {
-      const content = editorRef.current.innerHTML;
-      setEditorContent(content);
-      
-      broadcastChange('editor', content);
-      
-      const now = Date.now();
-      setCollaborators(prev => prev.map(c => 
-        c.id === 'current-user' 
-          ? { ...c, lastUpdate: now }
-          : c
-      ));
-      
-      if (gdriveConnected) {
-        clearTimeout(window.gdriveSyncTimeout);
-        window.gdriveSyncTimeout = setTimeout(syncToGoogleDrive, 30000);
-      }
-    }
-  };
-  
-  // Aplicar formato de texto
-  const applyFormat = (command, value = null) => {
-    document.execCommand(command, false, value);
-    if (editorRef.current) {
-      editorRef.current.focus();
-    }
-    handleEditorChange();
-    
-    setTextFormat(prev => ({
-      ...prev,
-      bold: document.queryCommandState('bold'),
-      italic: document.queryCommandState('italic'),
-      underline: document.queryCommandState('underline')
-    }));
-  };
-  
-  // Insertar template
-  const insertTemplate = (template) => {
-    if (editorRef.current) {
-      const editor = editorRef.current;
-      editor.focus();
-      
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = template.content;
-      
-      const selection = window.getSelection();
-      if (selection.rangeCount > 0) {
-        const range = selection.getRangeAt(0);
-        range.deleteContents();
-        
-        while (tempDiv.firstChild) {
-          range.insertNode(tempDiv.firstChild);
-        }
-        
-        range.collapse(false);
-        selection.removeAllRanges();
-        selection.addRange(range);
-      } else {
-        while (tempDiv.firstChild) {
-          editor.appendChild(tempDiv.firstChild);
-        }
-      }
-      
-      handleEditorChange();
-      setShowTemplateModal(false);
-      
-      editor.scrollTop = editor.scrollHeight;
-    }
-  };
-  
-  // Manejar pegado de imágenes
-  const handlePaste = (e) => {
-    const items = Array.from(e.clipboardData.items);
-    
-    for (const item of items) {
-      if (item.type.indexOf('image') !== -1) {
-        e.preventDefault();
-        const blob = item.getAsFile();
-        const reader = new FileReader();
-        
-        reader.onload = (event) => {
-          const img = document.createElement('img');
-          img.src = event.target.result;
-          img.style.maxWidth = '100%';
-          img.style.height = 'auto';
-          img.style.margin = '10px 0';
-          img.style.border = '2px solid #e5e7eb';
-          img.style.borderRadius = '8px';
-          img.style.cursor = 'pointer';
-          
-          img.addEventListener('click', (e) => {
-            e.target.style.border = '2px solid #3b82f6';
-          });
-          
-          const selection = window.getSelection();
-          if (selection.rangeCount > 0) {
-            const range = selection.getRangeAt(0);
-            range.insertNode(img);
-            range.collapse(false);
-            selection.removeAllRanges();
-            selection.addRange(range);
-          }
-          
-          handleEditorChange();
-        };
-        
-        reader.readAsDataURL(blob);
-        break;
-      }
-    }
-  };
-  
-  // Drag and drop de imágenes
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'copy';
-  };
-  
-  const handleDrop = (e) => {
-    e.preventDefault();
-    const files = Array.from(e.dataTransfer.files);
-    
-    files.forEach(file => {
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const img = document.createElement('img');
-          img.src = event.target.result;
-          img.style.maxWidth = '100%';
-          img.style.height = 'auto';
-          img.style.margin = '10px 0';
-          img.style.border = '2px solid #e5e7eb';
-          img.style.borderRadius = '8px';
-          
-          if (editorRef.current) {
-            editorRef.current.appendChild(img);
-            handleEditorChange();
-          }
-        };
-        reader.readAsDataURL(file);
-      }
-    });
-  };
-  
-  // Gestión de estudiantes
-  const addStudent = () => {
-    const name = prompt('Nombre del estudiante:');
-    if (name && name.trim()) {
-      const colors = ['#EF4444', '#F59E0B', '#10B981', '#8B5CF6', '#F97316'];
-      const newStudent = {
-        id: Date.now(),
-        name: name.trim(),
-        level: prompt('Nivel del estudiante (A1, A2, B1, B2, C1, C2):') || 'A1',
-        isGroup: false,
-        members: [],
-        color: colors[students.length % colors.length]
-      };
-      const updatedStudents = [...students, newStudent];
-      setStudents(updatedStudents);
-      localStorage.setItem('espanol-prof-students', JSON.stringify(updatedStudents));
-    }
-  };
-  
-  const addGroup = () => {
-    const name = prompt('Nombre del grupo:');
-    if (name && name.trim()) {
-      const members = prompt('Nombres de los miembros (separados por coma):');
-      if (members && members.trim()) {
-        const colors = ['#EF4444', '#F59E0B', '#10B981', '#8B5CF6', '#F97316'];
-        const newGroup = {
-          id: Date.now(),
-          name: name.trim(),
-          level: prompt('Nivel del grupo (A1, A2, B1, B2, C1, C2):') || 'A1',
-          isGroup: true,
-          members: members.split(',').map(m => m.trim()).filter(m => m),
-          color: colors[students.length % colors.length]
-        };
-        const updatedStudents = [...students, newGroup];
-        setStudents(updatedStudents);
-        localStorage.setItem('espanol-prof-students', JSON.stringify(updatedStudents));
-      }
-    }
-  };
-  
-  // Chat colaborativo
-  const sendMessage = () => {
-    if (!newMessage.trim()) return;
-    
-    const message = {
-      id: Date.now(),
-      user: userName,
-      color: userColor,
-      text: newMessage,
-      timestamp: new Date().toLocaleTimeString()
-    };
-    
-    setChatMessages([...chatMessages, message]);
-    setNewMessage('');
-    
-    broadcastChange('chat', message);
-  };
-  
-  // Exportación avanzada
-  const exportToPDF = () => {
-    const content = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <meta charset="utf-8">
-        <title>Sesión ${currentSession} - ${currentStudent?.name || 'General'}</title>
-        <style>
-          body { font-family: Arial, sans-serif; margin: 20px; }
-          .header { border-bottom: 2px solid #3b82f6; padding-bottom: 10px; margin-bottom: 20px; }
-          .content { margin: 20px 0; }
-          .session-info { background-color: #f9fafb; padding: 15px; border-radius: 8px; margin: 15px 0; }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <h1>EspañolProf - Sesión ${currentSession}</h1>
-          <p><strong>Fecha:</strong> ${new Date(sessionDate).toLocaleDateString('es-ES')}</p>
-          <p><strong>Estudiante:</strong> ${currentStudent?.name || 'No seleccionado'}</p>
-          ${currentStudent?.isGroup ? `<p><strong>Miembros:</strong> ${currentStudent.members.join(', ')}</p>` : ''}
-        </div>
-        
-        <div class="session-info">
-          <h3>Información de la Sesión</h3>
-          <p><strong>Objetivos:</strong> ${sessionData.objectives}</p>
-          <p><strong>Logros:</strong> ${sessionData.achievements}</p>
-          <p><strong>Progreso:</strong> ${sessionData.progress}</p>
-          <p><strong>Notas:</strong> ${sessionData.notes}</p>
-        </div>
-        
-        <div class="content">
-          <h3>Contenido del Trabajo</h3>
-          ${editorContent}
-        </div>
-      </body>
-      </html>
-    `;
-    
-    const blob = new Blob([content], { type: 'text/html' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `sesion-${currentSession}-${currentStudent?.name || 'general'}.html`;
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-  
-  return (
-    <div className="h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
-      {/* Header */}
-      <div className="bg-white shadow-lg border-b border-indigo-200 p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-indigo-800">EspañolProf</h1>
-            <div className="flex items-center gap-2">
-              <select 
-                value={currentStudent?.id || ''} 
-                onChange={(e) => setCurrentStudent(students.find(s => s.id == e.target.value))}
-                className="px-3 py-2 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-              >
-                <option value="">Seleccionar estudiante</option>
-                {students.map(student => (
-                  <option key={student.id} value={student.id}>
-                    {student.isGroup ? `👥 ${student.name}` : `👤 ${student.name}`}
-                  </option>
-                ))}
-              </select>
-              <button onClick={addStudent} className="p-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600">
-                <User size={20} />
-              </button>
-              <button onClick={addGroup} className="p-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600">
-                <Users size={20} />
-              </button>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
-              <div className={`w-3 h-3 rounded-full animate-pulse ${webrtcConnected ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-              <span className="text-sm text-gray-600">
-                {webrtcConnected ? `En línea: ${collaborators.length + 1}` : 'Desconectado'}
-              </span>
-            </div>
+        const EspanolProfApp = () => {
+            // Estados principales
+            const [currentStudent, setCurrentStudent] = useState(null);
+            const [students, setStudents] = useState([]);
+            const [sessions, setSessions] = useState({});
+            const [currentSession, setCurrentSession] = useState(1);
+            const [sessionDate, setSessionDate] = useState(new Date().toISOString().split('T')[0]);
+            const [vocabulary, setVocabulary] = useState({});
             
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600">Fecha:</label>
-              <input 
-                type="date" 
-                value={sessionDate}
-                onChange={(e) => setSessionDate(e.target.value)}
-                className="px-2 py-1 border border-indigo-300 rounded text-sm focus:ring-2 focus:ring-indigo-500"
-              />
-            </div>
+            // Estados del editor colaborativo
+            const editorRef = useRef(null);
+            const [editorContent, setEditorContent] = useState('');
+            const [collaborators, setCollaborators] = useState([]);
+            const [userName, setUserName] = useState('Profesor');
+            const [userColor, setUserColor] = useState('#3B82F6');
             
-            <span className="text-lg font-medium text-indigo-700">Sesión {currentSession}</span>
-            <input 
-              type="number" 
-              value={currentSession} 
-              onChange={(e) => setCurrentSession(parseInt(e.target.value))}
-              className="w-16 px-2 py-1 border border-indigo-300 rounded text-center"
-              min="1"
-            />
+            // Estados de herramientas del editor
+            const [textFormat, setTextFormat] = useState({
+                bold: false,
+                italic: false,
+                underline: false,
+                fontSize: 16,
+                color: '#000000',
+                align: 'left'
+            });
             
-            <div className="flex gap-1">
-              {!gdriveConnected ? (
-                <button 
-                  onClick={connectGoogleDrive}
-                  className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 text-sm"
-                  title="Conectar Google Drive"
-                >
-                  📁
-                </button>
-              ) : (
-                <button 
-                  onClick={syncToGoogleDrive}
-                  className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-sm"
-                  title="Sincronizar con Google Drive"
-                >
-                  ☁️
-                </button>
-              )}
-              
-              {!webrtcConnected ? (
-                <button 
-                  onClick={() => {
-                    const roomId = prompt('ID de la sala (comparte este ID con tus estudiantes):') || `sala-${Date.now()}`;
-                    joinRoom(roomId);
-                  }}
-                  className="p-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 text-sm"
-                  title="Conectar colaboración"
-                >
-                  🔗
-                </button>
-              ) : (
-                <button 
-                  className="p-2 bg-green-500 text-white rounded-lg text-sm cursor-default"
-                  title={`Sala: ${roomId}`}
-                >
-                  ✅
-                </button>
-              )}
-            </div>
+            // Estados de sesión
+            const [sessionData, setSessionData] = useState({
+                objectives: '',
+                achievements: '',
+                progress: '',
+                notes: ''
+            });
             
-            <button 
-              onClick={() => setShowChat(!showChat)}
-              className={`p-2 rounded-lg ${showChat ? 'bg-blue-500 text-white' : 'bg-gray-100'}`}
-            >
-              <MessageCircle size={20} />
-            </button>
-            <button onClick={exportToPDF} className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
-              <Download size={20} />
-            </button>
-          </div>
-        </div>
-      </div>
-      
-      <div className="flex-1 flex">
-        {/* Editor Principal */}
-        <div className="flex-1 p-4">
-          <div className="bg-white rounded-xl shadow-lg h-full flex flex-col">
-            {/* Barra de herramientas del editor */}
-            <div className="p-4 border-b border-gray-200">
-              <div className="flex items-center gap-2 flex-wrap">
-                <div className="flex items-center gap-1 border-r border-gray-300 pr-2">
-                  <button 
-                    onClick={() => applyFormat('bold')}
-                    className={`p-2 rounded ${textFormat.bold ? 'bg-indigo-500 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
-                  >
-                    <Bold size={16} />
-                  </button>
-                  <button 
-                    onClick={() => applyFormat('italic')}
-                    className={`p-2 rounded ${textFormat.italic ? 'bg-indigo-500 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
-                  >
-                    <Italic size={16} />
-                  </button>
-                  <button 
-                    onClick={() => applyFormat('underline')}
-                    className={`p-2 rounded ${textFormat.underline ? 'bg-indigo-500 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
-                  >
-                    <Underline size={16} />
-                  </button>
-                </div>
-                
-                <select 
-                  onChange={(e) => applyFormat('fontSize', e.target.value)}
-                  className="px-2 py-1 border border-gray-300 rounded text-sm"
-                  value={textFormat.fontSize}
-                >
-                  <option value="12">12px</option>
-                  <option value="14">14px</option>
-                  <option value="16">16px</option>
-                  <option value="18">18px</option>
-                  <option value="20">20px</option>
-                  <option value="24">24px</option>
-                  <option value="32">32px</option>
-                </select>
-                
-                <input 
-                  type="color" 
-                  value={textFormat.color}
-                  onChange={(e) => {
-                    setTextFormat(prev => ({...prev, color: e.target.value}));
-                    applyFormat('foreColor', e.target.value);
-                  }}
-                  className="w-8 h-8 rounded border border-gray-300"
-                />
-                
-                <div className="flex items-center gap-1 border-l border-gray-300 pl-2">
-                  <button onClick={() => applyFormat('justifyLeft')} className="p-2 bg-gray-100 rounded hover:bg-gray-200">
-                    <AlignLeft size={16} />
-                  </button>
-                  <button onClick={() => applyFormat('justifyCenter')} className="p-2 bg-gray-100 rounded hover:bg-gray-200">
-                    <AlignCenter size={16} />
-                  </button>
-                  <button onClick={() => applyFormat('justifyRight')} className="p-2 bg-gray-100 rounded hover:bg-gray-200">
-                    <AlignRight size={16} />
-                  </button>
-                </div>
-                
-                <div className="flex items-center gap-1 border-l border-gray-300 pl-2">
-                  <button onClick={() => applyFormat('insertUnorderedList')} className="p-2 bg-gray-100 rounded hover:bg-gray-200">
-                    <List size={16} />
-                  </button>
-                  <button onClick={() => applyFormat('insertOrderedList')} className="p-2 bg-gray-100 rounded hover:bg-gray-200">
-                    <ListOrdered size={16} />
-                  </button>
-                </div>
-                
-                <button 
-                  onClick={() => setShowTemplateModal(true)}
-                  className="p-2 bg-purple-500 text-white rounded hover:bg-purple-600 flex items-center gap-1"
-                >
-                  <FileText size={16} />
-                  Templates
-                </button>
-                
-                <button 
-                  onClick={() => applyFormat('removeFormat')}
-                  className="p-2 bg-red-500 text-white rounded hover:bg-red-600"
-                >
-                  <Eraser size={16} />
-                </button>
-              </div>
-            </div>
+            // Estados de herramientas
+            const [showTemplateModal, setShowTemplateModal] = useState(false);
+            const [activePanel, setActivePanel] = useState('session');
+            const [showChat, setShowChat] = useState(false);
+            const [chatMessages, setChatMessages] = useState([]);
+            const [newMessage, setNewMessage] = useState('');
             
-            {/* Editor de contenido */}
-            <div className="flex-1 p-4">
-              <div
-                ref={editorRef}
-                contentEditable
-                onInput={handleEditorChange}
-                onPaste={handlePaste}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-                className="w-full h-full border border-gray-300 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 overflow-y-auto"
-                style={{ 
-                  minHeight: '400px',
-                  fontFamily: 'Arial, sans-serif',
-                  fontSize: '16px',
-                  lineHeight: '1.6'
-                }}
-                suppressContentEditableWarning={true}
-              />
-              
-              <div className="mt-2 text-sm text-gray-500 flex items-center gap-4">
-                <span>💡 Ctrl+V para pegar imágenes</span>
-                <span>🖱️ Arrastra imágenes desde tu computadora</span>
-                <span>✨ Usa los templates para ejercicios rápidos</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* Panel lateral */}
-        <div className="w-96 p-4">
-          <div className="bg-white rounded-xl shadow-lg h-full flex flex-col">
-            <div className="p-4 border-b border-gray-200">
-              <div className="flex gap-2">
-                <button 
-                  onClick={() => setActivePanel('session')}
-                  className={`px-3 py-2 rounded-lg text-sm ${activePanel === 'session' ? 'bg-indigo-500 text-white' : 'bg-gray-100'}`}
-                >
-                  Sesión
-                </button>
-                <button 
-                  onClick={() => setActivePanel('tools')}
-                  className={`px-3 py-2 rounded-lg text-sm ${activePanel === 'tools' ? 'bg-indigo-500 text-white' : 'bg-gray-100'}`}
-                >
-                  Herramientas
-                </button>
-                <button 
-                  onClick={() => setActivePanel('vocab')}
-                  className={`px-3 py-2 rounded-lg text-sm ${activePanel === 'vocab' ? 'bg-indigo-500 text-white' : 'bg-gray-100'}`}
-                >
-                  Vocabulario
-                </button>
-              </div>
-            </div>
+            // Estados de conectividad
+            const [gdriveConnected, setGdriveConnected] = useState(false);
+            const [webrtcConnected, setWebrtcConnected] = useState(false);
+            const [roomId, setRoomId] = useState('');
             
-            <div className="flex-1 p-4 overflow-y-auto">
-              {activePanel === 'session' && (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-gray-800 mb-2">Información de la Sesión</h3>
-                    <div className="bg-blue-50 p-3 rounded-lg mb-3">
-                      <p className="text-sm"><strong>Fecha:</strong> {new Date(sessionDate).toLocaleDateString('es-ES', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}</p>
-                      <p className="text-sm"><strong>Sesión:</strong> #{currentSession}</p>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-semibold text-gray-800 mb-2">Información del Estudiante</h3>
-                    {currentStudent ? (
-                      <div className="bg-indigo-50 p-3 rounded-lg">
-                        <div className="flex items-center gap-2">
-                          <div 
-                            className="w-4 h-4 rounded-full"
-                            style={{ backgroundColor: currentStudent.color }}
-                          ></div>
-                          <p className="font-medium">{currentStudent.name}</p>
+            // Templates predefinidos
+            const templates = [
+                {
+                    id: 'conjugation',
+                    name: 'Tabla de Conjugación',
+                    content: `
+                        <h2 style="color: #1f2937; margin-bottom: 16px;">Conjugación del Verbo: _______</h2>
+                        <table style="width: 100%; border-collapse: collapse; margin: 20px 0; border: 1px solid #d1d5db;">
+                            <tr style="background-color: #f3f4f6;">
+                                <th style="border: 1px solid #d1d5db; padding: 12px; text-align: left;">Pronombre</th>
+                                <th style="border: 1px solid #d1d5db; padding: 12px; text-align: left;">Presente</th>
+                                <th style="border: 1px solid #d1d5db; padding: 12px; text-align: left;">Pretérito</th>
+                            </tr>
+                            <tr><td style="border: 1px solid #d1d5db; padding: 8px;">Yo</td><td style="border: 1px solid #d1d5db; padding: 8px;">_______</td><td style="border: 1px solid #d1d5db; padding: 8px;">_______</td></tr>
+                            <tr><td style="border: 1px solid #d1d5db; padding: 8px;">Tú</td><td style="border: 1px solid #d1d5db; padding: 8px;">_______</td><td style="border: 1px solid #d1d5db; padding: 8px;">_______</td></tr>
+                            <tr><td style="border: 1px solid #d1d5db; padding: 8px;">Él/Ella</td><td style="border: 1px solid #d1d5db; padding: 8px;">_______</td><td style="border: 1px solid #d1d5db; padding: 8px;">_______</td></tr>
+                            <tr><td style="border: 1px solid #d1d5db; padding: 8px;">Nosotros</td><td style="border: 1px solid #d1d5db; padding: 8px;">_______</td><td style="border: 1px solid #d1d5db; padding: 8px;">_______</td></tr>
+                            <tr><td style="border: 1px solid #d1d5db; padding: 8px;">Vosotros</td><td style="border: 1px solid #d1d5db; padding: 8px;">_______</td><td style="border: 1px solid #d1d5db; padding: 8px;">_______</td></tr>
+                            <tr><td style="border: 1px solid #d1d5db; padding: 8px;">Ellos/Ellas</td><td style="border: 1px solid #d1d5db; padding: 8px;">_______</td><td style="border: 1px solid #d1d5db; padding: 8px;">_______</td></tr>
+                        </table>
+                    `
+                },
+                {
+                    id: 'vocabulary',
+                    name: 'Lista de Vocabulario',
+                    content: `
+                        <h2 style="color: #1f2937; margin-bottom: 16px;">Vocabulario - Lección ___</h2>
+                        <div style="margin: 20px 0;">
+                            <h3 style="color: #374151; margin-bottom: 12px;">Nuevas Palabras:</h3>
+                            <ul style="list-style-type: disc; margin-left: 20px; line-height: 1.6;">
+                                <li><strong>Palabra:</strong> _______ - <em>Definición</em></li>
+                                <li><strong>Palabra:</strong> _______ - <em>Definición</em></li>
+                                <li><strong>Palabra:</strong> _______ - <em>Definición</em></li>
+                                <li><strong>Palabra:</strong> _______ - <em>Definición</em></li>
+                                <li><strong>Palabra:</strong> _______ - <em>Definición</em></li>
+                            </ul>
+                            <h3 style="color: #374151; margin: 20px 0 12px 0;">Frases de Ejemplo:</h3>
+                            <ol style="margin-left: 20px; line-height: 1.6;">
+                                <li>_______________________________</li>
+                                <li>_______________________________</li>
+                                <li>_______________________________</li>
+                            </ol>
                         </div>
-                        <p className="text-sm text-gray-600">Nivel: {currentStudent.level}</p>
-                        {currentStudent.isGroup && (
-                          <p className="text-sm text-gray-600">
-                            Miembros: {currentStudent.members.join(', ')}
-                          </p>
-                        )}
-                      </div>
-                    ) : (
-                      <p className="text-gray-500">Selecciona un estudiante</p>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Objetivos de la sesión</label>
-                    <textarea 
-                      value={sessionData.objectives}
-                      onChange={(e) => setSessionData({...sessionData, objectives: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                      rows="3"
-                      placeholder="¿Qué queremos lograr hoy?"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Logros alcanzados</label>
-                    <textarea 
-                      value={sessionData.achievements}
-                      onChange={(e) => setSessionData({...sessionData, achievements: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                      rows="3"
-                      placeholder="¿Qué hemos conseguido?"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Progreso observado</label>
-                    <textarea 
-                      value={sessionData.progress}
-                      onChange={(e) => setSessionData({...sessionData, progress: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                      rows="3"
-                      placeholder="¿Cómo evoluciona el estudiante?"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Notas adicionales</label>
-                    <textarea 
-                      value={sessionData.notes}
-                      onChange={(e) => setSessionData({...sessionData, notes: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                      rows="3"
-                      placeholder="Observaciones, tareas, etc."
-                    />
-                  </div>
-                </div>
-              )}
-              
-              {activePanel === 'tools' && (
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="font-semibold text-gray-800 mb-3">Ejercicios con IA</h3>
-                    <div className="space-y-2">
-                      <button 
-                        onClick={() => alert('Función de IA en desarrollo - Conecta tu API key')}
-                        className="w-full p-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 flex items-center gap-2"
-                      >
-                        <Lightbulb size={20} />
-                        Generar ejercicio
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-semibold text-gray-800 mb-3">Conjugador de Verbos</h3>
-                    <div className="space-y-2">
-                      <input 
-                        type="text" 
-                        placeholder="Escribe un verbo..."
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                      />
-                      <select className="w-full px-3 py-2 border border-gray-300 rounded-lg">
-                        <option>Presente</option>
-                        <option>Pretérito</option>
-                        <option>Futuro</option>
-                        <option>Subjuntivo</option>
-                      </select>
-                      <button className="w-full p-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600">
-                        Conjugar
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-semibold text-gray-800 mb-3">Conectividad y Colaboración</h3>
-                    <div className="space-y-3">
-                      <div className="bg-gray-50 p-3 rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">Google Drive</span>
-                          <span className={`text-xs px-2 py-1 rounded ${gdriveConnected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                            {gdriveConnected ? 'Conectado' : 'Desconectado'}
-                          </span>
-                        </div>
-                        {gdriveConnected && (
-                          <p className="text-xs text-gray-600 mt-1">Sincronización automática activada</p>
-                        )}
-                      </div>
-                      
-                      <div className="bg-gray-50 p-3 rounded-lg">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">Colaboración</span>
-                          <span className={`text-xs px-2 py-1 rounded ${webrtcConnected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                            {webrtcConnected ? 'Activa' : 'Inactiva'}
-                          </span>
-                        </div>
-                        {webrtcConnected && roomId && (
-                          <p className="text-xs text-gray-600 mt-1">Sala: {roomId}</p>
-                        )}
-                      </div>
-                      
-                      {webrtcConnected && collaborators.length > 0 && (
-                        <div className="bg-blue-50 p-3 rounded-lg">
-                          <p className="text-sm font-medium mb-2">Participantes:</p>
-                          {collaborators.map(collab => (
-                            <div key={collab.id} className="flex items-center gap-2 text-sm">
-                              <div 
-                                className="w-3 h-3 rounded-full"
-                                style={{ backgroundColor: collab.color }}
-                              ></div>
-                              <span>{collab.name}</span>
-                              <span className="text-xs text-gray-500">
-                                {Date.now() - collab.lastUpdate < 5000 ? '🟢' : '🟡'}
-                              </span>
+                    `
+                },
+                {
+                    id: 'exercise',
+                    name: 'Ejercicio de Completar',
+                    content: `
+                        <h2 style="color: #1f2937; margin-bottom: 16px;">Ejercicio: Completa las Frases</h2>
+                        <div style="margin: 20px 0;">
+                            <p style="margin-bottom: 16px;"><strong>Instrucciones:</strong> Completa las siguientes frases con la palabra correcta.</p>
+                            <div style="margin: 15px 0; padding: 15px; background-color: #f9fafb; border-left: 4px solid #3b82f6; border-radius: 4px;">
+                                <p style="margin: 8px 0;">1. Me gusta _______ música en mi tiempo libre.</p>
+                                <p style="margin: 8px 0;">2. ¿_______ hora es?</p>
+                                <p style="margin: 8px 0;">3. Mi hermana _______ estudiando medicina.</p>
+                                <p style="margin: 8px 0;">4. _______ mañana vamos al parque.</p>
+                                <p style="margin: 8px 0;">5. El libro _______ muy interesante.</p>
                             </div>
-                          ))}
+                            <p style="margin-top: 16px;"><strong>Palabras disponibles:</strong> escuchar, qué, está, mañana, es</p>
                         </div>
-                      )}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-semibold text-gray-800 mb-3">Configuración</h3>
-                    <div className="space-y-2">
-                      <input 
-                        type="password" 
-                        placeholder="API Key OpenAI"
-                        value={apiKey}
-                        onChange={(e) => setApiKey(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                      />
-                      <div className="text-xs text-gray-500">
-                        <p>💡 Para colaboración en tiempo real, comparte la sala con tus estudiantes</p>
-                        <p>☁️ Google Drive guarda automáticamente cada 30 segundos</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {activePanel === 'vocab' && (
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-semibold text-gray-800">Vocabulario Personal</h3>
-                    <button 
-                      onClick={() => setShowVocabModal(true)}
-                      className="p-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
-                    >
-                      <Plus size={16} />
-                    </button>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    {currentStudent && vocabulary[currentStudent.id] && vocabulary[currentStudent.id].map((word, index) => (
-                      <div key={index} className="bg-gray-50 p-3 rounded-lg">
-                        <div className="font-medium text-gray-800">{word.word}</div>
-                        <div className="text-sm text-gray-600">{word.definition}</div>
-                        {word.example && (
-                          <div className="text-sm text-indigo-600 italic">"{word.example}"</div>
-                        )}
-                      </div>
-                    ))}
-                    {(!currentStudent || !vocabulary[currentStudent.id]) && (
-                      <p className="text-gray-500 text-center py-4">
-                        {!currentStudent ? 'Selecciona un estudiante' : 'No hay vocabulario guardado'}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
+                    `
+                }
+            ];
             
-            <div className="p-4 border-t border-gray-200">
-              <details className="cursor-pointer">
-                <summary className="font-semibold text-gray-800 flex items-center gap-2">
-                  <Calendar size={16} />
-                  Calendario
-                </summary>
-                <div className="mt-2 h-64 bg-gray-100 rounded-lg flex items-center justify-center">
-                  <p className="text-gray-500">Aquí va tu Google Calendar embebido</p>
-                </div>
-              </details>
-            </div>
-          </div>
-        </div>
-        
-        {showChat && (
-          <div className="w-80 p-4">
-            <div className="bg-white rounded-xl shadow-lg h-full flex flex-col">
-              <div className="p-4 border-b border-gray-200">
-                <h3 className="font-semibold text-gray-800 flex items-center gap-2">
-                  <MessageCircle size={16} />
-                  Chat Colaborativo
-                </h3>
-              </div>
-              
-              <div className="flex-1 p-4 overflow-y-auto space-y-2">
-                {chatMessages.map(msg => (
-                  <div key={msg.id} className="flex items-start gap-2">
-                    <div 
-                      className="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-medium"
-                      style={{ backgroundColor: msg.color }}
-                    >
-                      {msg.user[0]}
+            useEffect(() => {
+                // Cargar datos guardados
+                const savedData = localStorage.getItem('espanol-prof-data');
+                if (savedData) {
+                    try {
+                        const data = JSON.parse(savedData);
+                        setSessions(data.sessions || {});
+                        setVocabulary(data.vocabulary || {});
+                        setEditorContent(data.editorContent || '');
+                    } catch (e) {
+                        console.log('Error loading data:', e);
+                    }
+                }
+                
+                // Cargar estudiantes
+                const savedStudents = localStorage.getItem('espanol-prof-students');
+                if (savedStudents) {
+                    try {
+                        const parsedStudents = JSON.parse(savedStudents);
+                        setStudents(Array.isArray(parsedStudents) ? parsedStudents : []);
+                    } catch (e) {
+                        setStudents([]);
+                    }
+                }
+                
+                // Configurar editor
+                if (editorRef.current) {
+                    editorRef.current.innerHTML = editorContent;
+                }
+                
+                // Simular colaboradores conectados
+                setTimeout(() => {
+                    setWebrtcConnected(true);
+                    setCollaborators([
+                        { id: 'user1', name: 'Estudiante 1', color: '#EF4444', lastUpdate: Date.now() },
+                        { id: 'user2', name: 'Estudiante 2', color: '#10B981', lastUpdate: Date.now() }
+                    ]);
+                }, 2000);
+            }, []);
+            
+            // Guardar datos automáticamente
+            useEffect(() => {
+                const saveData = () => {
+                    const data = {
+                        sessions,
+                        vocabulary,
+                        editorContent
+                    };
+                    localStorage.setItem('espanol-prof-data', JSON.stringify(data));
+                };
+                
+                const interval = setInterval(saveData, 10000);
+                return () => clearInterval(interval);
+            }, [sessions, vocabulary, editorContent]);
+            
+            // Manejar cambios en el editor
+            const handleEditorChange = () => {
+                if (editorRef.current) {
+                    const content = editorRef.current.innerHTML;
+                    setEditorContent(content);
+                }
+            };
+            
+            // Aplicar formato de texto
+            const applyFormat = (command, value = null) => {
+                document.execCommand(command, false, value);
+                if (editorRef.current) {
+                    editorRef.current.focus();
+                }
+                handleEditorChange();
+                
+                setTextFormat(prev => ({
+                    ...prev,
+                    bold: document.queryCommandState('bold'),
+                    italic: document.queryCommandState('italic'),
+                    underline: document.queryCommandState('underline')
+                }));
+            };
+            
+            // Insertar template
+            const insertTemplate = (template) => {
+                if (editorRef.current) {
+                    const editor = editorRef.current;
+                    editor.focus();
+                    
+                    const tempDiv = document.createElement('div');
+                    tempDiv.innerHTML = template.content;
+                    
+                    const selection = window.getSelection();
+                    if (selection.rangeCount > 0) {
+                        const range = selection.getRangeAt(0);
+                        range.deleteContents();
+                        
+                        while (tempDiv.firstChild) {
+                            range.insertNode(tempDiv.firstChild);
+                        }
+                        
+                        range.collapse(false);
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                    } else {
+                        while (tempDiv.firstChild) {
+                            editor.appendChild(tempDiv.firstChild);
+                        }
+                    }
+                    
+                    handleEditorChange();
+                    setShowTemplateModal(false);
+                    
+                    editor.scrollTop = editor.scrollHeight;
+                }
+            };
+            
+            // Manejar pegado de imágenes
+            const handlePaste = (e) => {
+                const items = Array.from(e.clipboardData.items);
+                
+                for (const item of items) {
+                    if (item.type.indexOf('image') !== -1) {
+                        e.preventDefault();
+                        const blob = item.getAsFile();
+                        const reader = new FileReader();
+                        
+                        reader.onload = (event) => {
+                            const img = document.createElement('img');
+                            img.src = event.target.result;
+                            img.style.maxWidth = '100%';
+                            img.style.height = 'auto';
+                            img.style.margin = '10px 0';
+                            img.style.border = '2px solid #e5e7eb';
+                            img.style.borderRadius = '8px';
+                            img.style.cursor = 'pointer';
+                            
+                            img.addEventListener('click', (e) => {
+                                e.target.style.border = '2px solid #3b82f6';
+                            });
+                            
+                            const selection = window.getSelection();
+                            if (selection.rangeCount > 0) {
+                                const range = selection.getRangeAt(0);
+                                range.insertNode(img);
+                                range.collapse(false);
+                                selection.removeAllRanges();
+                                selection.addRange(range);
+                            }
+                            
+                            handleEditorChange();
+                        };
+                        
+                        reader.readAsDataURL(blob);
+                        break;
+                    }
+                }
+            };
+            
+            // Drag and drop de imágenes
+            const handleDragOver = (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'copy';
+            };
+            
+            const handleDrop = (e) => {
+                e.preventDefault();
+                const files = Array.from(e.dataTransfer.files);
+                
+                files.forEach(file => {
+                    if (file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            const img = document.createElement('img');
+                            img.src = event.target.result;
+                            img.style.maxWidth = '100%';
+                            img.style.height = 'auto';
+                            img.style.margin = '10px 0';
+                            img.style.border = '2px solid #e5e7eb';
+                            img.style.borderRadius = '8px';
+                            
+                            if (editorRef.current) {
+                                editorRef.current.appendChild(img);
+                                handleEditorChange();
+                            }
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+            };
+            
+            // Gestión de estudiantes
+            const addStudent = () => {
+                const name = prompt('Nombre del estudiante:');
+                if (name && name.trim()) {
+                    const colors = ['#EF4444', '#F59E0B', '#10B981', '#8B5CF6', '#F97316'];
+                    const newStudent = {
+                        id: Date.now(),
+                        name: name.trim(),
+                        level: prompt('Nivel del estudiante (A1, A2, B1, B2, C1, C2):') || 'A1',
+                        isGroup: false,
+                        members: [],
+                        color: colors[students.length % colors.length]
+                    };
+                    const updatedStudents = [...students, newStudent];
+                    setStudents(updatedStudents);
+                    localStorage.setItem('espanol-prof-students', JSON.stringify(updatedStudents));
+                }
+            };
+            
+            const addGroup = () => {
+                const name = prompt('Nombre del grupo:');
+                if (name && name.trim()) {
+                    const members = prompt('Nombres de los miembros (separados por coma):');
+                    if (members && members.trim()) {
+                        const colors = ['#EF4444', '#F59E0B', '#10B981', '#8B5CF6', '#F97316'];
+                        const newGroup = {
+                            id: Date.now(),
+                            name: name.trim(),
+                            level: prompt('Nivel del grupo (A1, A2, B1, B2, C1, C2):') || 'A1',
+                            isGroup: true,
+                            members: members.split(',').map(m => m.trim()).filter(m => m),
+                            color: colors[students.length % colors.length]
+                        };
+                        const updatedStudents = [...students, newGroup];
+                        setStudents(updatedStudents);
+                        localStorage.setItem('espanol-prof-students', JSON.stringify(updatedStudents));
+                    }
+                }
+            };
+            
+            // Chat colaborativo
+            const sendMessage = () => {
+                if (!newMessage.trim()) return;
+                
+                const message = {
+                    id: Date.now(),
+                    user: userName,
+                    color: userColor,
+                    text: newMessage,
+                    timestamp: new Date().toLocaleTimeString()
+                };
+                
+                setChatMessages([...chatMessages, message]);
+                setNewMessage('');
+            };
+            
+            // Exportación
+            const exportToPDF = () => {
+                const content = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta charset="utf-8">
+                        <title>Sesión ${currentSession} - ${currentStudent?.name || 'General'}</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; margin: 20px; }
+                            .header { border-bottom: 2px solid #3b82f6; padding-bottom: 10px; margin-bottom: 20px; }
+                            .content { margin: 20px 0; }
+                            .session-info { background-color: #f9fafb; padding: 15px; border-radius: 8px; margin: 15px 0; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="header">
+                            <h1>EspañolProf - Sesión ${currentSession}</h1>
+                            <p><strong>Fecha:</strong> ${new Date(sessionDate).toLocaleDateString('es-ES')}</p>
+                            <p><strong>Estudiante:</strong> ${currentStudent?.name || 'No seleccionado'}</p>
+                            ${currentStudent?.isGroup ? `<p><strong>Miembros:</strong> ${currentStudent.members.join(', ')}</p>` : ''}
+                        </div>
+                        
+                        <div class="session-info">
+                            <h3>Información de la Sesión</h3>
+                            <p><strong>Objetivos:</strong> ${sessionData.objectives}</p>
+                            <p><strong>Logros:</strong> ${sessionData.achievements}</p>
+                            <p><strong>Progreso:</strong> ${sessionData.progress}</p>
+                            <p><strong>Notas:</strong> ${sessionData.notes}</p>
+                        </div>
+                        
+                        <div class="content">
+                            <h3>Contenido del Trabajo</h3>
+                            ${editorContent}
+                        </div>
+                    </body>
+                    </html>
+                `;
+                
+                const blob = new Blob([content], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `sesion-${currentSession}-${currentStudent?.name || 'general'}.html`;
+                a.click();
+                URL.revokeObjectURL(url);
+            };
+            
+            // Conectar sala de colaboración
+            const joinRoom = () => {
+                const roomId = prompt('ID de la sala (comparte este ID con tus estudiantes):') || `sala-${Date.now()}`;
+                setRoomId(roomId);
+                setWebrtcConnected(true);
+                alert(`Sala creada: ${roomId}\nComparte este ID con tus estudiantes para que se unan.`);
+            };
+            
+            return (
+                <div className="h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col">
+                    {/* Header */}
+                    <div className="bg-white shadow-lg border-b border-indigo-200 p-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <h1 className="text-2xl font-bold text-indigo-800">EspañolProf</h1>
+                                <div className="flex items-center gap-2">
+                                    <select 
+                                        value={currentStudent?.id || ''} 
+                                        onChange={(e) => setCurrentStudent(students.find(s => s.id == e.target.value))}
+                                        className="px-3 py-2 border border-indigo-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                    >
+                                        <option value="">Seleccionar estudiante</option>
+                                        {students.map(student => (
+                                            <option key={student.id} value={student.id}>
+                                                {student.isGroup ? `👥 ${student.name}` : `👤 ${student.name}`}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <button onClick={addStudent} className="p-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600">
+                                        <Icons.User />
+                                    </button>
+                                    <button onClick={addGroup} className="p-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600">
+                                        <Icons.Users />
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1">
+                                    <div className={`w-3 h-3 rounded-full animate-pulse ${webrtcConnected ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                                    <span className="text-sm text-gray-600">
+                                        {webrtcConnected ? `En línea: ${collaborators.length + 1}` : 'Desconectado'}
+                                    </span>
+                                </div>
+                                
+                                <div className="flex items-center gap-2">
+                                    <label className="text-sm text-gray-600">Fecha:</label>
+                                    <input 
+                                        type="date" 
+                                        value={sessionDate}
+                                        onChange={(e) => setSessionDate(e.target.value)}
+                                        className="px-2 py-1 border border-indigo-300 rounded text-sm focus:ring-2 focus:ring-indigo-500"
+                                    />
+                                </div>
+                                
+                                <span className="text-lg font-medium text-indigo-700">Sesión {currentSession}</span>
+                                <input 
+                                    type="number" 
+                                    value={currentSession} 
+                                    onChange={(e) => setCurrentSession(parseInt(e.target.value))}
+                                    className="w-16 px-2 py-1 border border-indigo-300 rounded text-center"
+                                    min="1"
+                                />
+                                
+                                <div className="flex gap-1">
+                                    <button 
+                                        onClick={() => setGdriveConnected(!gdriveConnected)}
+                                        className={`p-2 text-white rounded-lg text-sm ${gdriveConnected ? 'bg-green-500 hover:bg-green-600' : 'bg-blue-500 hover:bg-blue-600'}`}
+                                        title={gdriveConnected ? "Sincronizado con Google Drive" : "Conectar Google Drive"}
+                                    >
+                                        {gdriveConnected ? '☁️' : '📁'}
+                                    </button>
+                                    
+                                    <button 
+                                        onClick={joinRoom}
+                                        className={`p-2 text-white rounded-lg text-sm ${webrtcConnected ? 'bg-green-500' : 'bg-purple-500 hover:bg-purple-600'}`}
+                                        title={webrtcConnected ? `Sala: ${roomId}` : "Crear sala de colaboración"}
+                                    >
+                                        {webrtcConnected ? '✅' : '🔗'}
+                                    </button>
+                                </div>
+                                
+                                <button 
+                                    onClick={() => setShowChat(!showChat)}
+                                    className={`p-2 rounded-lg ${showChat ? 'bg-blue-500 text-white' : 'bg-gray-100'}`}
+                                >
+                                    <Icons.MessageCircle />
+                                </button>
+                                <button onClick={exportToPDF} className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600">
+                                    <Icons.Download />
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium">{msg.user}</span>
-                        <span className="text-xs text-gray-500">{msg.timestamp}</span>
-                      </div>
-                      <p className="text-sm text-gray-700">{msg.text}</p>
+                    
+                    <div className="flex-1 flex">
+                        {/* Editor Principal */}
+                        <div className="flex-1 p-4">
+                            <div className="bg-white rounded-xl shadow-lg h-full flex flex-col">
+                                {/* Barra de herramientas del editor */}
+                                <div className="p-4 border-b border-gray-200">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <div className="flex items-center gap-1 border-r border-gray-300 pr-2">
+                                            <button 
+                                                onClick={() => applyFormat('bold')}
+                                                className={`p-2 rounded ${textFormat.bold ? 'bg-indigo-500 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                                            >
+                                                <Icons.Bold />
+                                            </button>
+                                            <button 
+                                                onClick={() => applyFormat('italic')}
+                                                className={`p-2 rounded ${textFormat.italic ? 'bg-indigo-500 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                                            >
+                                                <Icons.Italic />
+                                            </button>
+                                            <button 
+                                                onClick={() => applyFormat('underline')}
+                                                className={`p-2 rounded ${textFormat.underline ? 'bg-indigo-500 text-white' : 'bg-gray-100 hover:bg-gray-200'}`}
+                                            >
+                                                <Icons.Underline />
+                                            </button>
+                                        </div>
+                                        
+                                        <select 
+                                            onChange={(e) => applyFormat('fontSize', e.target.value)}
+                                            className="px-2 py-1 border border-gray-300 rounded text-sm"
+                                            defaultValue="16"
+                                        >
+                                            <option value="12">12px</option>
+                                            <option value="14">14px</option>
+                                            <option value="16">16px</option>
+                                            <option value="18">18px</option>
+                                            <option value="20">20px</option>
+                                            <option value="24">24px</option>
+                                            <option value="32">32px</option>
+                                        </select>
+                                        
+                                        <input 
+                                            type="color" 
+                                            value={textFormat.color}
+                                            onChange={(e) => {
+                                                setTextFormat(prev => ({...prev, color: e.target.value}));
+                                                applyFormat('foreColor', e.target.value);
+                                            }}
+                                            className="w-8 h-8 rounded border border-gray-300"
+                                        />
+                                        
+                                        <div className="flex items-center gap-1 border-l border-gray-300 pl-2">
+                                            <button onClick={() => applyFormat('justifyLeft')} className="p-2 bg-gray-100 rounded hover:bg-gray-200">
+                                                <Icons.AlignLeft />
+                                            </button>
+                                            <button onClick={() => applyFormat('justifyCenter')} className="p-2 bg-gray-100 rounded hover:bg-gray-200">
+                                                <Icons.AlignCenter />
+                                            </button>
+                                            <button onClick={() => applyFormat('justifyRight')} className="p-2 bg-gray-100 rounded hover:bg-gray-200">
+                                                <Icons.AlignRight />
+                                            </button>
+                                        </div>
+                                        
+                                        <div className="flex items-center gap-1 border-l border-gray-300 pl-2">
+                                            <button onClick={() => applyFormat('insertUnorderedList')} className="p-2 bg-gray-100 rounded hover:bg-gray-200">
+                                                <Icons.List />
+                                            </button>
+                                            <button onClick={() => applyFormat('insertOrderedList')} className="p-2 bg-gray-100 rounded hover:bg-gray-200">
+                                                <Icons.ListOrdered />
+                                            </button>
+                                        </div>
+                                        
+                                        <button 
+                                            onClick={() => setShowTemplateModal(true)}
+                                            className="p-2 bg-purple-500 text-white rounded hover:bg-purple-600 flex items-center gap-1"
+                                        >
+                                            <Icons.FileText />
+                                            <span className="text-sm">Templates</span>
+                                        </button>
+                                        
+                                        <button 
+                                            onClick={() => applyFormat('removeFormat')}
+                                            className="p-2 bg-red-500 text-white rounded hover:bg-red-600"
+                                        >
+                                            <Icons.Eraser />
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                {/* Editor de contenido */}
+                                <div className="flex-1 p-4">
+                                    <div
+                                        ref={editorRef}
+                                        contentEditable
+                                        onInput={handleEditorChange}
+                                        onPaste={handlePaste}
+                                        onDragOver={handleDragOver}
+                                        onDrop={handleDrop}
+                                        className="editor-content w-full h-full border border-gray-300 rounded-lg p-4 focus:outline-none focus:ring-2 focus:ring-indigo-500 overflow-y-auto"
+                                        style={{ 
+                                            minHeight: '400px',
+                                            fontFamily: 'Arial, sans-serif',
+                                            fontSize: '16px',
+                                            lineHeight: '1.6'
+                                        }}
+                                        suppressContentEditableWarning={true}
+                                        placeholder="Comienza a escribir o pega imágenes aquí..."
+                                    />
+                                    
+                                    <div className="mt-2 text-sm text-gray-500 flex items-center gap-4">
+                                        <span>💡 Ctrl+V para pegar imágenes</span>
+                                        <span>🖱️ Arrastra imágenes desde tu computadora</span>
+                                        <span>✨ Usa los templates para ejercicios rápidos</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {/* Panel lateral */}
+                        <div className="w-96 p-4">
+                            <div className="bg-white rounded-xl shadow-lg h-full flex flex-col">
+                                <div className="p-4 border-b border-gray-200">
+                                    <div className="flex gap-2">
+                                        <button 
+                                            onClick={() => setActivePanel('session')}
+                                            className={`px-3 py-2 rounded-lg text-sm ${activePanel === 'session' ? 'bg-indigo-500 text-white' : 'bg-gray-100'}`}
+                                        >
+                                            Sesión
+                                        </button>
+                                        <button 
+                                            onClick={() => setActivePanel('tools')}
+                                            className={`px-3 py-2 rounded-lg text-sm ${activePanel === 'tools' ? 'bg-indigo-500 text-white' : 'bg-gray-100'}`}
+                                        >
+                                            Herramientas
+                                        </button>
+                                        <button 
+                                            onClick={() => setActivePanel('vocab')}
+                                            className={`px-3 py-2 rounded-lg text-sm ${activePanel === 'vocab' ? 'bg-indigo-500 text-white' : 'bg-gray-100'}`}
+                                        >
+                                            Vocabulario
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div className="flex-1 p-4 overflow-y-auto">
+                                    {activePanel === 'session' && (
+                                        <div className="space-y-4">
+                                            <div>
+                                                <h3 className="font-semibold text-gray-800 mb-2">Información de la Sesión</h3>
+                                                <div className="bg-blue-50 p-3 rounded-lg mb-3">
+                                                    <p className="text-sm"><strong>Fecha:</strong> {new Date(sessionDate).toLocaleDateString('es-ES', { 
+                                                        weekday: 'long', 
+                                                        year: 'numeric', 
+                                                        month: 'long', 
+                                                        day: 'numeric' 
+                                                    })}</p>
+                                                    <p className="text-sm"><strong>Sesión:</strong> #{currentSession}</p>
+                                                </div>
+                                            </div>
+                                            
+                                            <div>
+                                                <h3 className="font-semibold text-gray-800 mb-2">Información del Estudiante</h3>
+                                                {currentStudent ? (
+                                                    <div className="bg-indigo-50 p-3 rounded-lg">
+                                                        <div className="flex items-center gap-2">
+                                                            <div 
+                                                                className="w-4 h-4 rounded-full"
+                                                                style={{ backgroundColor: currentStudent.color }}
+                                                            ></div>
+                                                            <p className="font-medium">{currentStudent.name}</p>
+                                                        </div>
+                                                        <p className="text-sm text-gray-600">Nivel: {currentStudent.level}</p>
+                                                        {currentStudent.isGroup && (
+                                                            <p className="text-sm text-gray-600">
+                                                                Miembros: {currentStudent.members.join(', ')}
+                                                            </p>
+                                                        )}
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-gray-500">Selecciona un estudiante</p>
+                                                )}
+                                            </div>
+                                            
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Objetivos de la sesión</label>
+                                                <textarea 
+                                                    value={sessionData.objectives}
+                                                    onChange={(e) => setSessionData({...sessionData, objectives: e.target.value})}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                                    rows="3"
+                                                    placeholder="¿Qué queremos lograr hoy?"
+                                                />
+                                            </div>
+                                            
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Logros alcanzados</label>
+                                                <textarea 
+                                                    value={sessionData.achievements}
+                                                    onChange={(e) => setSessionData({...sessionData, achievements: e.target.value})}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                                    rows="3"
+                                                    placeholder="¿Qué hemos conseguido?"
+                                                />
+                                            </div>
+                                            
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Progreso observado</label>
+                                                <textarea 
+                                                    value={sessionData.progress}
+                                                    onChange={(e) => setSessionData({...sessionData, progress: e.target.value})}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                                    rows="3"
+                                                    placeholder="¿Cómo evoluciona el estudiante?"
+                                                />
+                                            </div>
+                                            
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">Notas adicionales</label>
+                                                <textarea 
+                                                    value={sessionData.notes}
+                                                    onChange={(e) => setSessionData({...sessionData, notes: e.target.value})}
+                                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                                    rows="3"
+                                                    placeholder="Observaciones, tareas, etc."
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
+                                    
+                                    {activePanel === 'tools' && (
+                                        <div className="space-y-4">
+                                            <div>
+                                                <h3 className="font-semibold text-gray-800 mb-3">Ejercicios con IA</h3>
+                                                <div className="space-y-2">
+                                                    <button 
+                                                        onClick={() => alert('Función de IA en desarrollo - Conecta tu API key de OpenAI')}
+                                                        className="w-full p-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:from-purple-600 hover:to-pink-600 flex items-center gap-2 justify-center"
+                                                    >
+                                                        <Icons.Lightbulb />
+                                                        Generar ejercicio
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            
+                                            <div>
+                                                <h3 className="font-semibold text-gray-800 mb-3">Conjugador de Verbos</h3>
+                                                <div className="space-y-2">
+                                                    <input 
+                                                        type="text" 
+                                                        placeholder="Escribe un verbo..."
+                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                                                    />
+                                                    <select className="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                                                        <option>Presente</option>
+                                                        <option>Pretérito</option>
+                                                        <option>Futuro</option>
+                                                        <option>Subjuntivo</option>
+                                                    </select>
+                                                    <button className="w-full p-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600">
+                                                        Conjugar
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            
+                                            <div>
+                                                <h3 className="font-semibold text-gray-800 mb-3">Estado de Conectividad</h3>
+                                                <div className="space-y-3">
+                                                    <div className="bg-gray-50 p-3 rounded-lg">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-sm font-medium">Google Drive</span>
+                                                            <span className={`text-xs px-2 py-1 rounded ${gdriveConnected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                                                {gdriveConnected ? 'Conectado' : 'Desconectado'}
+                                                            </span>
+                                                        </div>
+                                                        {gdriveConnected && (
+                                                            <p className="text-xs text-gray-600 mt-1">Sincronización automática activada</p>
+                                                        )}
+                                                    </div>
+                                                    
+                                                    <div className="bg-gray-50 p-3 rounded-lg">
+                                                        <div className="flex items-center justify-between">
+                                                            <span className="text-sm font-medium">Colaboración</span>
+                                                            <span className={`text-xs px-2 py-1 rounded ${webrtcConnected ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                                                                {webrtcConnected ? 'Activa' : 'Inactiva'}
+                                                            </span>
+                                                        </div>
+                                                        {webrtcConnected && roomId && (
+                                                            <p className="text-xs text-gray-600 mt-1">Sala: {roomId}</p>
+                                                        )}
+                                                    </div>
+                                                    
+                                                    {webrtcConnected && collaborators.length > 0 && (
+                                                        <div className="bg-blue-50 p-3 rounded-lg">
+                                                            <p className="text-sm font-medium mb-2">Participantes:</p>
+                                                            {collaborators.map(collab => (
+                                                                <div key={collab.id} className="flex items-center gap-2 text-sm">
+                                                                    <div 
+                                                                        className="w-3 h-3 rounded-full"
+                                                                        style={{ backgroundColor: collab.color }}
+                                                                    ></div>
+                                                                    <span>{collab.name}</span>
+                                                                    <span className="text-xs text-gray-500">
+                                                                        {Date.now() - collab.lastUpdate < 5000 ? '🟢' : '🟡'}
+                                                                    </span>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                    
+                                    {activePanel === 'vocab' && (
+                                        <div className="space-y-4">
+                                            <div className="flex justify-between items-center">
+                                                <h3 className="font-semibold text-gray-800">Vocabulario Personal</h3>
+                                                <button 
+                                                    onClick={() => alert('Funcionalidad de vocabulario en desarrollo')}
+                                                    className="p-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
+                                                >
+                                                    <Icons.Plus />
+                                                </button>
+                                            </div>
+                                            
+                                            <div className="space-y-2">
+                                                {currentStudent && vocabulary[currentStudent.id] && vocabulary[currentStudent.id].map((word, index) => (
+                                                    <div key={index} className="bg-gray-50 p-3 rounded-lg">
+                                                        <div className="font-medium text-gray-800">{word.word}</div>
+                                                        <div className="text-sm text-gray-600">{word.definition}</div>
+                                                        {word.example && (
+                                                            <div className="text-sm text-indigo-600 italic">"{word.example}"</div>
+                                                        )}
+                                                    </div>
+                                                ))}
+                                                {(!currentStudent || !vocabulary[currentStudent.id]) && (
+                                                    <p className="text-gray-500 text-center py-4">
+                                                        {!currentStudent ? 'Selecciona un estudiante' : 'No hay vocabulario guardado'}
+                                                    </p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                                
+                                <div className="p-4 border-t border-gray-200">
+                                    <details className="cursor-pointer">
+                                        <summary className="font-semibold text-gray-800 flex items-center gap-2">
+                                            <Icons.Calendar />
+                                            Calendario
+                                        </summary>
+                                        <div className="mt-2 h-64 bg-gray-100 rounded-lg flex items-center justify-center">
+                                            <p className="text-gray-500">Aquí va tu Google Calendar embebido</p>
+                                        </div>
+                                    </details>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {showChat && (
+                            <div className="w-80 p-4">
+                                <div className="bg-white rounded-xl shadow-lg h-full flex flex-col">
+                                    <div className="p-4 border-b border-gray-200">
+                                        <h3 className="font-semibold text-gray-800 flex items-center gap-2">
+                                            <Icons.MessageCircle />
+                                            Chat Colaborativo
+                                        </h3>
+                                    </div>
+                                    
+                                    <div className="flex-1 p-4 overflow-y-auto space-y-2">
+                                        {chatMessages.map(msg => (
+                                            <div key={msg.id} className="flex items-start gap-2">
+                                                <div 
+                                                    className="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center text-white text-xs font-medium"
+                                                    style={{ backgroundColor: msg.color }}
+                                                >
+                                                    {msg.user[0]}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm font-medium">{msg.user}</span>
+                                                        <span className="text-xs text-gray-500">{msg.timestamp}</span>
+                                                    </div>
+                                                    <p className="text-sm text-gray-700">{msg.text}</p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                        {chatMessages.length === 0 && (
+                                            <p className="text-gray-500 text-center py-4">No hay mensajes aún</p>
+                                        )}
+                                    </div>
+                                    
+                                    <div className="p-4 border-t border-gray-200">
+                                        <div className="flex gap-2">
+                                            <input 
+                                                type="text"
+                                                value={newMessage}
+                                                onChange={(e) => setNewMessage(e.target.value)}
+                                                onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                                                placeholder="Escribe un mensaje..."
+                                                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
+                                            />
+                                            <button 
+                                                onClick={sendMessage}
+                                                className="p-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
+                                            >
+                                                <Icons.ArrowRight />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="p-4 border-t border-gray-200">
-                <div className="flex gap-2">
-                  <input 
-                    type="text"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                    placeholder="Escribe un mensaje..."
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-                  />
-                  <button 
-                    onClick={sendMessage}
-                    className="p-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600"
-                  >
-                    <ArrowRight size={16} />
-                  </button>
+                    
+                    {showTemplateModal && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                            <div className="bg-white rounded-xl p-6 max-w-2xl w-full m-4 max-h-96 overflow-y-auto">
+                                <h3 className="text-xl font-bold mb-4">Seleccionar Template</h3>
+                                <div className="grid gap-4">
+                                    {templates.map(template => (
+                                        <div key={template.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer"
+                                             onClick={() => insertTemplate(template)}>
+                                            <h4 className="font-semibold text-gray-800">{template.name}</h4>
+                                            <div className="text-sm text-gray-600 mt-2">
+                                                {template.content.replace(/<[^>]*>/g, '').substring(0, 100)}...
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                                <div className="flex justify-end gap-2 mt-4">
+                                    <button onClick={() => setShowTemplateModal(false)} className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-      
-      {showTemplateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-2xl w-full m-4 max-h-96 overflow-y-auto">
-            <h3 className="text-xl font-bold mb-4">Seleccionar Template</h3>
-            <div className="grid gap-4">
-              {templates.map(template => (
-                <div key={template.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer"
-                     onClick={() => insertTemplate(template)}>
-                  <h4 className="font-semibold text-gray-800">{template.name}</h4>
-                  <div className="text-sm text-gray-600 mt-2">
-                    {template.content.replace(/<[^>]*>/g, '').substring(0, 100)}...
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <button onClick={() => setShowTemplateModal(false)} className="px-4 py-2 bg-gray-500 text-white rounded-lg">
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
+            );
+        };
 
-export default EspanolProfApp;
-        
+        // Renderizar la aplicación
+        ReactDOM.render(<EspanolProfApp />, document.getElementById('root'));
     </script>
 </body>
 </html>

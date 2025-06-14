@@ -944,7 +944,7 @@
                     }
                 };
                 
-                const interval = setInterval(saveData, 30000); // Guardar cada 30 segundos
+                const interval = setInterval(saveData, 900000); // Guardar cada 15 minutos
                 return () => clearInterval(interval);
             }, [sessions, vocabulary, editorContent, isSignedIn, syncStatus]);
             

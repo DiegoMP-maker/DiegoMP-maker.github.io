@@ -250,8 +250,11 @@
         const GOOGLE_CLIENT_ID = apiKeys.googleClientId;
         const GOOGLE_API_KEY = apiKeys.googleApiKey;
         const OPENAI_API_KEY = apiKeys.openaiApiKey;
-        const DISCOVERY_DOCS = ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'];
-        const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata';
+        const DISCOVERY_DOCS = [
+            'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
+            'https://www.googleapis.com/discovery/v1/apis/gmail/v1/rest'
+        ];
+        const SCOPES = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/gmail.send';
 
         // Biblioteca de ejercicios pre-generados
         const exerciseLibrary = {
@@ -867,6 +870,98 @@
                     }
                 } catch (error) {
                     console.error('Error loading session:', error);
+                    setSyncStatus('error');
+                }
+            };
+            
+            // Función para enviar email con Gmail API
+            const sendSessionByEmail = async (studentEmail, studentName, sessionNumber, content) => {
+                if (!isSignedIn) {
+                    alert('Debes estar conectado a Google Drive para enviar emails');
+                    return;
+                }
+                
+                if (!studentEmail) {
+                    alert('El estudiante no tiene email configurado');
+                    return;
+                }
+                
+                setSyncStatus('syncing');
+                
+                try {
+                    // Crear el contenido del email
+                    const subject = `📚 Sesión ${sessionNumber} - ${studentName} - EspañolProf (${sessionDate})`;
+                    
+                    const emailBody = `
+                        <html>
+                        <head>
+                            <style>
+                                body { font-family: Arial, sans-serif; line-height: 1.6; margin: 20px; }
+                                .header { background-color: #3b82f6; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+                                .content { background-color: #f9fafb; padding: 20px; border-radius: 8px; border-left: 4px solid #3b82f6; }
+                                .footer { margin-top: 20px; padding: 15px; background-color: #e5e7eb; border-radius: 8px; font-size: 12px; color: #6b7280; }
+                            </style>
+                        </head>
+                        <body>
+                            <div class="header">
+                                <h1>📚 EspañolProf - Sesión ${sessionNumber}</h1>
+                                <p>Estudiante: ${studentName}</p>
+                                <p>Fecha: ${new Date(sessionDate).toLocaleDateString('es-ES', { 
+                                    weekday: 'long', 
+                                    year: 'numeric', 
+                                    month: 'long', 
+                                    day: 'numeric' 
+                                })}</p>
+                            </div>
+                            
+                            <div class="content">
+                                <h2>Contenido de la Sesión:</h2>
+                                ${content || '<p>No hay contenido disponible para esta sesión.</p>'}
+                            </div>
+                            
+                            <div class="footer">
+                                <p>Este email fue enviado automáticamente desde EspañolProf</p>
+                                <p>Si no deberías haber recibido este email, por favor contacta con tu profesor</p>
+                            </div>
+                        </body>
+                        </html>
+                    `;
+                    
+                    // Crear el mensaje en formato RFC 2822
+                    const boundary = "boundary_" + Date.now();
+                    const message = [
+                        `To: ${studentEmail}`,
+                        `Subject: ${subject}`,
+                        `Content-Type: multipart/mixed; boundary="${boundary}"`,
+                        ``,
+                        `--${boundary}`,
+                        `Content-Type: text/html; charset=UTF-8`,
+                        ``,
+                        emailBody,
+                        `--${boundary}--`
+                    ].join('\r\n');
+                    
+                    // Codificar en base64
+                    const encodedMessage = btoa(unescape(encodeURIComponent(message)))
+                        .replace(/\+/g, '-')
+                        .replace(/\//g, '_')
+                        .replace(/=+$/, '');
+                    
+                    // Enviar el email usando Gmail API
+                    const response = await gapi.client.gmail.users.messages.send({
+                        'userId': 'me',
+                        'resource': {
+                            'raw': encodedMessage
+                        }
+                    });
+                    
+                    console.log('Email enviado exitosamente:', response);
+                    alert(`Email enviado exitosamente a ${studentEmail}`);
+                    setSyncStatus('synced');
+                    
+                } catch (error) {
+                    console.error('Error enviando email:', error);
+                    alert('Error enviando el email. Verifica que tengas permisos de Gmail.');
                     setSyncStatus('error');
                 }
             };
@@ -1506,10 +1601,12 @@
             const addStudent = () => {
                 const name = prompt('Nombre del estudiante:');
                 if (name && name.trim()) {
+                    const email = prompt('Email del estudiante (opcional):');
                     const colors = ['#EF4444', '#F59E0B', '#10B981', '#8B5CF6', '#F97316'];
                     const newStudent = {
                         id: Date.now(),
                         name: name.trim(),
+                        email: email && email.trim() ? email.trim() : null,
                         level: prompt('Nivel del estudiante (A1, A2, B1, B2, C1, C2):') || 'A1',
                         isGroup: false,
                         members: [],
@@ -1805,6 +1902,20 @@
                                         </button>
                                     )}
                                     
+                                    {currentStudent && currentStudent.email && isSignedIn && (
+                                        <button 
+                                            onClick={() => {
+                                                if (confirm(`¿Enviar la sesión ${currentSession} por email a ${currentStudent.email}?`)) {
+                                                    sendSessionByEmail(currentStudent.email, currentStudent.name, currentSession, currentSessionContent);
+                                                }
+                                            }}
+                                            className="p-2 bg-blue-500 text-white rounded-lg text-sm hover:bg-blue-600"
+                                            title={`Enviar Sesión ${currentSession} por email a ${currentStudent.email}`}
+                                        >
+                                            📧
+                                        </button>
+                                    )}
+                                    
                                     <button 
                                         onClick={joinRoom}
                                         className={`p-2 text-white rounded-lg text-sm ${webrtcConnected ? 'bg-green-500' : 'bg-purple-500 hover:bg-purple-600'}`}
@@ -2019,6 +2130,9 @@
                                                             <p className="font-medium">{currentStudent.name}</p>
                                                         </div>
                                                         <p className="text-sm text-gray-600">Nivel: {currentStudent.level}</p>
+                                                        {currentStudent.email && (
+                                                            <p className="text-sm text-gray-600">Email: {currentStudent.email}</p>
+                                                        )}
                                                         {currentStudent.isGroup && (
                                                             <p className="text-sm text-gray-600">
                                                                 Miembros: {currentStudent.members.join(', ')}

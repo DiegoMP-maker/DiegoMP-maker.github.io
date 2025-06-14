@@ -394,9 +394,9 @@
             const [driveFiles, setDriveFiles] = useState([]);
             const [syncStatus, setSyncStatus] = useState('disconnected'); // disconnected, syncing, synced, error
             
-            // Google Identity Services
-            let tokenClient = null;
-            let accessToken = null;
+            // Google Identity Services - usando useRef para mantener referencias
+            const tokenClientRef = useRef(null);
+            const accessTokenRef = useRef(null);
             
             // Templates predefinidos
             const templates = [
@@ -487,8 +487,13 @@
                         console.log('Cliente GAPI inicializado');
                         
                         // Inicializar Google Identity Services
-                        if (window.google && window.google.accounts) {
-                            tokenClient = google.accounts.oauth2.initTokenClient({
+                        if (window.google && window.google.accounts && window.google.accounts.oauth2) {
+                            console.log('Inicializando tokenClient con:', {
+                                client_id: GOOGLE_CLIENT_ID,
+                                scope: SCOPES
+                            });
+                            
+                            tokenClientRef.current = google.accounts.oauth2.initTokenClient({
                                 client_id: GOOGLE_CLIENT_ID,
                                 scope: SCOPES,
                                 callback: (response) => {
@@ -499,11 +504,11 @@
                                     }
                                     
                                     // Token obtenido exitosamente
-                                    accessToken = response.access_token;
+                                    accessTokenRef.current = response.access_token;
                                     console.log('Token obtenido exitosamente');
                                     
                                     // Configurar el token en gapi
-                                    gapi.client.setToken({ access_token: accessToken });
+                                    gapi.client.setToken({ access_token: accessTokenRef.current });
                                     
                                     // Actualizar el estado a conectado
                                     setIsSignedIn(true);
@@ -541,14 +546,14 @@
                 try {
                     if (isSignedIn) {
                         // Desconectar: revocar el token
-                        if (accessToken) {
-                            google.accounts.oauth2.revoke(accessToken, () => {
+                        if (accessTokenRef.current) {
+                            google.accounts.oauth2.revoke(accessTokenRef.current, () => {
                                 console.log('Token revocado');
                             });
                         }
                         
                         // Limpiar el token y actualizar el estado
-                        accessToken = null;
+                        accessTokenRef.current = null;
                         gapi.client.setToken(null);
                         setIsSignedIn(false);
                         setGdriveConnected(false);
@@ -557,9 +562,16 @@
                         console.log('Usuario desconectado');
                     } else {
                         // Conectar: solicitar autorización
-                        if (tokenClient) {
+                        console.log('Estado del tokenClient:', {
+                            tokenClientRef: tokenClientRef,
+                            tokenClientRefCurrent: tokenClientRef.current,
+                            googleAccounts: window.google && window.google.accounts,
+                            googleOAuth2: window.google && window.google.accounts && window.google.accounts.oauth2
+                        });
+                        
+                        if (tokenClientRef.current) {
                             console.log('Iniciando proceso de autenticación...');
-                            tokenClient.requestAccessToken({ prompt: 'consent' });
+                            tokenClientRef.current.requestAccessToken({ prompt: 'consent' });
                         } else {
                             console.error('Cliente de token no inicializado');
                             alert('Error: Sistema de autenticación no inicializado. Recarga la página.');
@@ -855,16 +867,25 @@
                 
                 // Inicializar Google Drive API
                 const initializeGoogleServices = () => {
-                    if (window.gapi && window.google && window.google.accounts) {
+                    console.log('Verificando servicios de Google...', {
+                        gapi: !!window.gapi,
+                        google: !!window.google,
+                        googleAccounts: window.google && !!window.google.accounts,
+                        googleOAuth2: window.google && window.google.accounts && !!window.google.accounts.oauth2
+                    });
+                    
+                    if (window.gapi && window.google && window.google.accounts && window.google.accounts.oauth2) {
+                        console.log('Todos los servicios de Google están cargados, inicializando...');
                         initGoogleDrive();
                     } else {
+                        console.log('Esperando a que se carguen los servicios de Google...');
                         // Reintentar en 500ms
                         setTimeout(initializeGoogleServices, 500);
                     }
                 };
                 
                 // Esperar un poco para que todos los scripts se carguen
-                setTimeout(initializeGoogleServices, 1000);
+                setTimeout(initializeGoogleServices, 1500);
             }, []);
             
             // Guardar datos automáticamente

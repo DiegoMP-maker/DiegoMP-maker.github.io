@@ -326,7 +326,7 @@
             // Estados principales
             const [currentStudent, setCurrentStudent] = useState(null);
             const [students, setStudents] = useState([]);
-            const [sessions, setSessions] = useState({});
+            const [sessions, setSessions] = useState({}); // Estructura: { studentId: { sessionNumber: { content, date, title } } }
             const [currentSession, setCurrentSession] = useState(1);
             const [sessionDate, setSessionDate] = useState(new Date().toISOString().split('T')[0]);
             const [vocabulary, setVocabulary] = useState({});
@@ -334,6 +334,7 @@
             // Estados del editor colaborativo
             const editorRef = useRef(null);
             const [editorContent, setEditorContent] = useState('');
+            const [currentSessionContent, setCurrentSessionContent] = useState(''); // Contenido de la sesión actual
             const [collaborators, setCollaborators] = useState([]);
             const [userName, setUserName] = useState('Profesor');
             const [userColor, setUserColor] = useState('#3B82F6');
@@ -615,6 +616,41 @@
                 }
             };
             
+            // Función para obtener o crear carpeta del alumno/grupo
+            const getOrCreateStudentFolder = async (studentName) => {
+                try {
+                    // Primero obtener la carpeta principal espanolprof
+                    const mainFolderId = await getOrCreateFolder();
+                    
+                    // Buscar si existe la carpeta del alumno
+                    const searchResponse = await gapi.client.drive.files.list({
+                        'q': `name='${studentName}' and mimeType='application/vnd.google-apps.folder' and '${mainFolderId}' in parents and trashed=false`,
+                        'fields': 'files(id, name)'
+                    });
+                    
+                    if (searchResponse.result.files && searchResponse.result.files.length > 0) {
+                        console.log(`Carpeta del alumno ${studentName} encontrada:`, searchResponse.result.files[0].id);
+                        return searchResponse.result.files[0].id;
+                    } else {
+                        // Crear la carpeta del alumno
+                        console.log(`Creando carpeta para ${studentName}...`);
+                        const createResponse = await gapi.client.drive.files.create({
+                            'resource': {
+                                'name': studentName,
+                                'mimeType': 'application/vnd.google-apps.folder',
+                                'parents': [mainFolderId]
+                            },
+                            'fields': 'id'
+                        });
+                        console.log(`Carpeta creada para ${studentName}:`, createResponse.result.id);
+                        return createResponse.result.id;
+                    }
+                } catch (error) {
+                    console.error('Error al obtener/crear carpeta del alumno:', error);
+                    throw error;
+                }
+            };
+            
             const loadDriveFiles = async () => {
                 try {
                     // Primero obtener el ID de la carpeta
@@ -630,6 +666,62 @@
                     setDriveFiles(response.result.files || []);
                 } catch (error) {
                     console.error('Error loading files:', error);
+                    setSyncStatus('error');
+                }
+            };
+            
+            // Función para guardar sesión individual del alumno
+            const saveSessionToGoogleDrive = async (studentName, sessionNumber, content) => {
+                if (!isSignedIn) return;
+                
+                setSyncStatus('syncing');
+                
+                try {
+                    // Obtener carpeta del alumno
+                    const studentFolderId = await getOrCreateStudentFolder(studentName);
+                    
+                    const sessionData = {
+                        studentName: studentName,
+                        sessionNumber: sessionNumber,
+                        date: sessionDate,
+                        content: content,
+                        vocabulary: vocabulary[`${studentName}_${sessionNumber}`] || [],
+                        lastModified: new Date().toISOString()
+                    };
+                    
+                    const boundary = '-------314159265358979323846';
+                    const delimiter = "\r\n--" + boundary + "\r\n";
+                    const close_delim = "\r\n--" + boundary + "--";
+                    
+                    const metadata = {
+                        'name': `sesion-${sessionNumber}-${sessionDate}.json`,
+                        'mimeType': 'application/json',
+                        'parents': [studentFolderId]
+                    };
+                    
+                    const multipartRequestBody =
+                        delimiter +
+                        'Content-Type: application/json\r\n\r\n' +
+                        JSON.stringify(metadata) +
+                        delimiter +
+                        'Content-Type: application/json\r\n\r\n' +
+                        JSON.stringify(sessionData, null, 2) +
+                        close_delim;
+                    
+                    const response = await gapi.client.request({
+                        'path': '/upload/drive/v3/files',
+                        'method': 'POST',
+                        'params': {'uploadType': 'multipart'},
+                        'headers': {
+                            'Content-Type': 'multipart/related; boundary="' + boundary + '"'
+                        },
+                        'body': multipartRequestBody
+                    });
+                    
+                    console.log(`Sesión ${sessionNumber} guardada para ${studentName}:`, response.result);
+                    setSyncStatus('synced');
+                } catch (error) {
+                    console.error('Error saving session:', error);
                     setSyncStatus('error');
                 }
             };
@@ -717,6 +809,64 @@
                     alert('Datos cargados desde Google Drive');
                 } catch (error) {
                     console.error('Error loading from Google Drive:', error);
+                    setSyncStatus('error');
+                }
+            };
+            
+            // Función para cargar sesión individual de un alumno
+            const loadSessionFromGoogleDrive = async (studentName, sessionNumber) => {
+                if (!isSignedIn) return;
+                
+                setSyncStatus('syncing');
+                
+                try {
+                    // Obtener carpeta del alumno
+                    const studentFolderId = await getOrCreateStudentFolder(studentName);
+                    
+                    // Buscar el archivo de la sesión
+                    const searchResponse = await gapi.client.drive.files.list({
+                        'q': `'${studentFolderId}' in parents and name contains 'sesion-${sessionNumber}' and trashed=false`,
+                        'fields': 'files(id, name, modifiedTime)',
+                        'orderBy': 'modifiedTime desc'
+                    });
+                    
+                    if (searchResponse.result.files && searchResponse.result.files.length > 0) {
+                        const fileId = searchResponse.result.files[0].id;
+                        
+                        // Cargar el contenido del archivo
+                        const response = await gapi.client.drive.files.get({
+                            fileId: fileId,
+                            alt: 'media'
+                        });
+                        
+                        const sessionData = response.result;
+                        
+                        // Actualizar el contenido de la sesión actual
+                        setCurrentSessionContent(sessionData.content || '');
+                        if (editorRef.current) {
+                            editorRef.current.innerHTML = sessionData.content || '';
+                        }
+                        
+                        // Actualizar vocabulario específico de la sesión si existe
+                        if (sessionData.vocabulary) {
+                            setVocabulary(prev => ({
+                                ...prev,
+                                [`${studentName}_${sessionNumber}`]: sessionData.vocabulary
+                            }));
+                        }
+                        
+                        console.log(`Sesión ${sessionNumber} cargada para ${studentName}`);
+                        setSyncStatus('synced');
+                    } else {
+                        // No existe la sesión, crear contenido vacío
+                        setCurrentSessionContent('');
+                        if (editorRef.current) {
+                            editorRef.current.innerHTML = `<h2>Sesión ${sessionNumber} - ${studentName}</h2><p>Contenido de la sesión...</p>`;
+                        }
+                        setSyncStatus('synced');
+                    }
+                } catch (error) {
+                    console.error('Error loading session:', error);
                     setSyncStatus('error');
                 }
             };
@@ -948,11 +1098,25 @@
                 return () => clearInterval(interval);
             }, [sessions, vocabulary, editorContent, isSignedIn, syncStatus]);
             
+            // Efecto para cargar sesión cuando cambia el estudiante o número de sesión
+            useEffect(() => {
+                if (currentStudent && isSignedIn) {
+                    // Guardar la sesión actual antes de cambiar si hay contenido
+                    if (currentSessionContent && currentSessionContent.trim() !== '') {
+                        saveSessionToGoogleDrive(currentStudent.name, currentSession, currentSessionContent);
+                    }
+                    
+                    // Cargar la nueva sesión
+                    loadSessionFromGoogleDrive(currentStudent.name, currentSession);
+                }
+            }, [currentStudent, currentSession, isSignedIn]);
+            
             // Manejar cambios en el editor
             const handleEditorChange = () => {
                 if (editorRef.current) {
                     const content = editorRef.current.innerHTML;
                     setEditorContent(content);
+                    setCurrentSessionContent(content); // También actualizar contenido de sesión actual
                 }
             };
             
@@ -1629,6 +1793,16 @@
                                         >
                                             💾
                                         </button>
+                                        
+                                        {currentStudent && (
+                                            <button 
+                                                onClick={() => saveSessionToGoogleDrive(currentStudent.name, currentSession, currentSessionContent)}
+                                                className="p-2 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600"
+                                                title={`Guardar Sesión ${currentSession} - ${currentStudent.name}`}
+                                            >
+                                                📝
+                                            </button>
+                                        )}
                                     )}
                                     
                                     <button 

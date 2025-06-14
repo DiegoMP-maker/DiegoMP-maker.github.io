@@ -19,6 +19,9 @@
     <!-- Google API Client Library -->
     <script src="https://apis.google.com/js/api.js"></script>
     
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    
     <!-- Google Calendar Scheduling -->
     <link href="https://calendar.google.com/calendar/scheduling-button-script.css" rel="stylesheet">
     <script src="https://calendar.google.com/calendar/scheduling-button-script.js" async></script>
@@ -391,6 +394,10 @@
             const [driveFiles, setDriveFiles] = useState([]);
             const [syncStatus, setSyncStatus] = useState('disconnected'); // disconnected, syncing, synced, error
             
+            // Google Identity Services
+            let tokenClient = null;
+            let accessToken = null;
+            
             // Templates predefinidos
             const templates = [
                 {
@@ -468,36 +475,53 @@
                     return;
                 }
                 
-                // Cargar gapi correctamente según la documentación
-                gapi.load('client:auth2', () => {
-                    console.log('GAPI cargado correctamente');
+                // Cargar el cliente GAPI para Drive API
+                gapi.load('client', () => {
+                    console.log('GAPI client cargado correctamente');
                     
-                    // Configuración específica para aplicaciones web JavaScript
-                    const initConfig = {
+                    // Inicializar el cliente con API key
+                    gapi.client.init({
                         apiKey: GOOGLE_API_KEY,
-                        clientId: GOOGLE_CLIENT_ID,
                         discoveryDocs: DISCOVERY_DOCS,
-                        scope: SCOPES
-                        // NO incluir plugin_name para aplicaciones web
-                    };
-                    
-                    console.log('Inicializando con configuración para app web...');
-                    
-                    gapi.client.init(initConfig).then(() => {
-                        console.log('Auth2 inicializado correctamente');
-                        // Escuchar cambios en el estado de autenticación
-                        gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
+                    }).then(() => {
+                        console.log('Cliente GAPI inicializado');
                         
-                        // Manejar el estado inicial de autenticación
-                        updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
-                    }).catch(error => {
-                        console.error('Error inicializando auth2:', error);
-                        setSyncStatus('error');
-                        
-                        if (error.error === 'idpiframe_initialization_failed') {
-                            console.error('Detalles del error:', error.details);
-                            alert('Error de configuración OAuth. Verifica:\n1. Client ID correcto\n2. Orígenes autorizados\n3. APIs habilitadas');
+                        // Inicializar Google Identity Services
+                        if (window.google && window.google.accounts) {
+                            tokenClient = google.accounts.oauth2.initTokenClient({
+                                client_id: GOOGLE_CLIENT_ID,
+                                scope: SCOPES,
+                                callback: (response) => {
+                                    if (response.error) {
+                                        console.error('Error obteniendo token:', response);
+                                        setSyncStatus('error');
+                                        return;
+                                    }
+                                    
+                                    // Token obtenido exitosamente
+                                    accessToken = response.access_token;
+                                    console.log('Token obtenido exitosamente');
+                                    
+                                    // Configurar el token en gapi
+                                    gapi.client.setToken({ access_token: accessToken });
+                                    
+                                    // Actualizar el estado a conectado
+                                    setIsSignedIn(true);
+                                    setGdriveConnected(true);
+                                    setSyncStatus('synced');
+                                    
+                                    // Cargar archivos de Drive
+                                    loadDriveFiles();
+                                }
+                            });
+                            console.log('Google Identity Services inicializado');
+                        } else {
+                            console.error('Google Identity Services no está cargado');
+                            setSyncStatus('error');
                         }
+                    }).catch(error => {
+                        console.error('Error inicializando GAPI client:', error);
+                        setSyncStatus('error');
                     });
                 });
             };
@@ -516,29 +540,34 @@
             const handleAuthClick = async () => {
                 try {
                     if (isSignedIn) {
-                        await gapi.auth2.getAuthInstance().signOut();
+                        // Desconectar: revocar el token
+                        if (accessToken) {
+                            google.accounts.oauth2.revoke(accessToken, () => {
+                                console.log('Token revocado');
+                            });
+                        }
+                        
+                        // Limpiar el token y actualizar el estado
+                        accessToken = null;
+                        gapi.client.setToken(null);
+                        setIsSignedIn(false);
+                        setGdriveConnected(false);
+                        setSyncStatus('disconnected');
+                        setDriveFiles([]);
                         console.log('Usuario desconectado');
                     } else {
-                        // Configurar parámetros específicos para el signIn
-                        const googleAuth = gapi.auth2.getAuthInstance();
-                        const options = {
-                            scope: SCOPES,
-                            prompt: 'consent' // Forzar pantalla de consentimiento
-                        };
-                        
-                        console.log('Iniciando proceso de autenticación...');
-                        const googleUser = await googleAuth.signIn(options);
-                        console.log('Usuario autenticado:', googleUser.getBasicProfile().getEmail());
+                        // Conectar: solicitar autorización
+                        if (tokenClient) {
+                            console.log('Iniciando proceso de autenticación...');
+                            tokenClient.requestAccessToken({ prompt: 'consent' });
+                        } else {
+                            console.error('Cliente de token no inicializado');
+                            alert('Error: Sistema de autenticación no inicializado. Recarga la página.');
+                        }
                     }
                 } catch (error) {
                     console.error('Error en autenticación:', error);
-                    if (error.error === 'popup_closed_by_user') {
-                        console.log('El usuario cerró la ventana de autenticación');
-                    } else if (error.error === 'access_denied') {
-                        alert('Acceso denegado. Verifica los permisos de la aplicación.');
-                    } else {
-                        alert(`Error de autenticación: ${error.error || error.message || 'Error desconocido'}`);
-                    }
+                    alert(`Error de autenticación: ${error.message || 'Error desconocido'}`);
                 }
             };
             
@@ -825,16 +854,17 @@
                 }, 2000);
                 
                 // Inicializar Google Drive API
-                if (window.gapi) {
-                    initGoogleDrive();
-                } else {
-                    // Si gapi no está cargado aún, esperar y reintentar
-                    window.addEventListener('load', () => {
-                        if (window.gapi) {
-                            initGoogleDrive();
-                        }
-                    });
-                }
+                const initializeGoogleServices = () => {
+                    if (window.gapi && window.google && window.google.accounts) {
+                        initGoogleDrive();
+                    } else {
+                        // Reintentar en 500ms
+                        setTimeout(initializeGoogleServices, 500);
+                    }
+                };
+                
+                // Esperar un poco para que todos los scripts se carguen
+                setTimeout(initializeGoogleServices, 1000);
             }, []);
             
             // Guardar datos automáticamente

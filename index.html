@@ -1793,16 +1793,16 @@
                                         >
                                             💾
                                         </button>
-                                        
-                                        {currentStudent && (
-                                            <button 
-                                                onClick={() => saveSessionToGoogleDrive(currentStudent.name, currentSession, currentSessionContent)}
-                                                className="p-2 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600"
-                                                title={`Guardar Sesión ${currentSession} - ${currentStudent.name}`}
-                                            >
-                                                📝
-                                            </button>
-                                        )}
+                                    )}
+                                    
+                                    {currentStudent && isSignedIn && (
+                                        <button 
+                                            onClick={() => saveSessionToGoogleDrive(currentStudent.name, currentSession, currentSessionContent)}
+                                            className="p-2 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600"
+                                            title={`Guardar Sesión ${currentSession} - ${currentStudent.name}`}
+                                        >
+                                            📝
+                                        </button>
                                     )}
                                     
                                     <button 

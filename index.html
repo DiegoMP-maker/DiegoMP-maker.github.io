@@ -22,6 +22,10 @@
     <!-- Google Identity Services -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
+    <!-- jsPDF para generar PDFs -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
     <!-- Google Calendar Scheduling -->
     <link href="https://calendar.google.com/calendar/scheduling-button-script.css" rel="stylesheet">
     <script src="https://calendar.google.com/calendar/scheduling-button-script.js" async></script>
@@ -874,6 +878,79 @@
                 }
             };
             
+            // Función para generar PDF de la sesión
+            const generateSessionPDF = async (studentName, sessionNumber, content) => {
+                try {
+                    const { jsPDF } = window.jspdf;
+                    
+                    // Crear un elemento temporal para renderizar el contenido
+                    const tempDiv = document.createElement('div');
+                    tempDiv.style.width = '800px';
+                    tempDiv.style.padding = '20px';
+                    tempDiv.style.backgroundColor = 'white';
+                    tempDiv.style.fontFamily = 'Arial, sans-serif';
+                    tempDiv.style.position = 'absolute';
+                    tempDiv.style.left = '-9999px';
+                    
+                    tempDiv.innerHTML = `
+                        <div style="text-align: center; margin-bottom: 30px; border-bottom: 3px solid #3b82f6; padding-bottom: 20px;">
+                            <h1 style="color: #3b82f6; margin-bottom: 10px;">📚 EspañolProf</h1>
+                            <h2 style="color: #374151; margin-bottom: 5px;">Sesión ${sessionNumber}</h2>
+                            <p style="color: #6b7280; margin: 5px 0;">Estudiante: ${studentName}</p>
+                            <p style="color: #6b7280; margin: 5px 0;">Fecha: ${new Date(sessionDate).toLocaleDateString('es-ES', { 
+                                weekday: 'long', 
+                                year: 'numeric', 
+                                month: 'long', 
+                                day: 'numeric' 
+                            })}</p>
+                        </div>
+                        <div style="line-height: 1.6;">
+                            ${content || '<p>No hay contenido disponible para esta sesión.</p>'}
+                        </div>
+                    `;
+                    
+                    document.body.appendChild(tempDiv);
+                    
+                    // Usar html2canvas para capturar el contenido con imágenes
+                    const canvas = await html2canvas(tempDiv, {
+                        allowTaint: true,
+                        useCORS: true,
+                        scale: 2,
+                        backgroundColor: '#ffffff'
+                    });
+                    
+                    // Crear PDF
+                    const pdf = new jsPDF('p', 'mm', 'a4');
+                    const imgWidth = 190;
+                    const pageHeight = 295;
+                    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+                    let heightLeft = imgHeight;
+                    let position = 10;
+                    
+                    // Agregar imagen al PDF
+                    const imgData = canvas.toDataURL('image/png');
+                    pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                    
+                    // Agregar páginas adicionales si es necesario
+                    while (heightLeft >= 0) {
+                        position = heightLeft - imgHeight + 10;
+                        pdf.addPage();
+                        pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+                        heightLeft -= pageHeight;
+                    }
+                    
+                    // Limpiar elemento temporal
+                    document.body.removeChild(tempDiv);
+                    
+                    return pdf;
+                    
+                } catch (error) {
+                    console.error('Error generando PDF:', error);
+                    throw error;
+                }
+            };
+            
             // Función para enviar email con Gmail API
             const sendSessionByEmail = async (studentEmail, studentName, sessionNumber, content) => {
                 if (!isSignedIn) {
@@ -889,8 +966,13 @@
                 setSyncStatus('syncing');
                 
                 try {
-                    // Crear el contenido del email
-                    const subject = `📚 Sesión ${sessionNumber} - ${studentName} - EspañolProf (${sessionDate})`;
+                    // Generar PDF de la sesión
+                    console.log('Generando PDF...');
+                    const pdf = await generateSessionPDF(studentName, sessionNumber, content);
+                    const pdfData = pdf.output('datauristring').split(',')[1]; // Obtener base64 sin el prefijo data:
+                    
+                    // Crear el contenido del email (sin emojis para evitar problemas de codificación)
+                    const subject = `Sesion ${sessionNumber} - ${studentName} - EspanolProf (${sessionDate})`;
                     
                     const emailBody = `
                         <html>
@@ -916,6 +998,7 @@
                             
                             <div class="content">
                                 <h2>Contenido de la Sesión:</h2>
+                                <p><strong>📎 Adjunto:</strong> Encontrarás el contenido completo de la sesión en el archivo PDF adjunto.</p>
                                 ${content || '<p>No hay contenido disponible para esta sesión.</p>'}
                             </div>
                             
@@ -927,27 +1010,40 @@
                         </html>
                     `;
                     
-                    // Crear el mensaje en formato RFC 2822
+                    // Crear el mensaje en formato RFC 2822 con adjunto
                     const boundary = "boundary_" + Date.now();
+                    const fileName = `sesion-${sessionNumber}-${studentName}-${sessionDate}.pdf`;
+                    
                     const message = [
                         `To: ${studentEmail}`,
-                        `Subject: ${subject}`,
+                        `Subject: =?UTF-8?B?${btoa(subject)}?=`,
                         `Content-Type: multipart/mixed; boundary="${boundary}"`,
+                        `MIME-Version: 1.0`,
                         ``,
                         `--${boundary}`,
                         `Content-Type: text/html; charset=UTF-8`,
+                        `Content-Transfer-Encoding: base64`,
                         ``,
-                        emailBody,
+                        btoa(unescape(encodeURIComponent(emailBody))),
+                        ``,
+                        `--${boundary}`,
+                        `Content-Type: application/pdf; name="${fileName}"`,
+                        `Content-Disposition: attachment; filename="${fileName}"`,
+                        `Content-Transfer-Encoding: base64`,
+                        ``,
+                        pdfData,
+                        ``,
                         `--${boundary}--`
                     ].join('\r\n');
                     
-                    // Codificar en base64
+                    // Codificar en base64 para Gmail API
                     const encodedMessage = btoa(unescape(encodeURIComponent(message)))
                         .replace(/\+/g, '-')
                         .replace(/\//g, '_')
                         .replace(/=+$/, '');
                     
                     // Enviar el email usando Gmail API
+                    console.log('Enviando email con PDF adjunto...');
                     const response = await gapi.client.gmail.users.messages.send({
                         'userId': 'me',
                         'resource': {
@@ -956,7 +1052,7 @@
                     });
                     
                     console.log('Email enviado exitosamente:', response);
-                    alert(`Email enviado exitosamente a ${studentEmail}`);
+                    alert(`Email enviado exitosamente a ${studentEmail} con PDF adjunto`);
                     setSyncStatus('synced');
                     
                 } catch (error) {

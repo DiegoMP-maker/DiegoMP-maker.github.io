@@ -583,12 +583,48 @@
                 }
             };
             
+            // Función para obtener o crear la carpeta espanolprof
+            const getOrCreateFolder = async () => {
+                try {
+                    // Buscar si la carpeta ya existe
+                    const searchResponse = await gapi.client.drive.files.list({
+                        'q': "name='espanolprof' and mimeType='application/vnd.google-apps.folder' and trashed=false",
+                        'fields': 'files(id, name)'
+                    });
+                    
+                    if (searchResponse.result.files && searchResponse.result.files.length > 0) {
+                        // La carpeta ya existe
+                        console.log('Carpeta espanolprof encontrada:', searchResponse.result.files[0].id);
+                        return searchResponse.result.files[0].id;
+                    } else {
+                        // Crear la carpeta
+                        console.log('Creando carpeta espanolprof...');
+                        const createResponse = await gapi.client.drive.files.create({
+                            'resource': {
+                                'name': 'espanolprof',
+                                'mimeType': 'application/vnd.google-apps.folder'
+                            },
+                            'fields': 'id'
+                        });
+                        console.log('Carpeta creada:', createResponse.result.id);
+                        return createResponse.result.id;
+                    }
+                } catch (error) {
+                    console.error('Error al obtener/crear carpeta:', error);
+                    throw error;
+                }
+            };
+            
             const loadDriveFiles = async () => {
                 try {
+                    // Primero obtener el ID de la carpeta
+                    const folderId = await getOrCreateFolder();
+                    
+                    // Buscar archivos dentro de la carpeta
                     const response = await gapi.client.drive.files.list({
                         'pageSize': 100,
                         'fields': 'files(id, name, modifiedTime)',
-                        'q': "name contains 'espanol-prof' and trashed = false"
+                        'q': `'${folderId}' in parents and name contains 'espanol-prof' and trashed = false`
                     });
                     
                     setDriveFiles(response.result.files || []);
@@ -615,9 +651,13 @@
                 const delimiter = "\r\n--" + boundary + "\r\n";
                 const close_delim = "\r\n--" + boundary + "--";
                 
+                // Obtener el ID de la carpeta
+                const folderId = await getOrCreateFolder();
+                
                 const metadata = {
                     'name': `espanol-prof-data-${new Date().toISOString().split('T')[0]}.json`,
-                    'mimeType': 'application/json'
+                    'mimeType': 'application/json',
+                    'parents': [folderId]  // Especificar la carpeta padre
                 };
                 
                 const multipartRequestBody =
@@ -640,7 +680,7 @@
                         'body': multipartRequestBody
                     });
                     
-                    console.log('File saved to Google Drive:', response.result);
+                    console.log('File saved to Google Drive in espanolprof folder:', response.result);
                     setSyncStatus('synced');
                     loadDriveFiles(); // Recargar lista de archivos
                 } catch (error) {
